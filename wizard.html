@@ -1,0 +1,222 @@
+<!--
+
+EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
+
+Works on EdgeRouter X / X-SFP (tested on System versions 1.7.0 and 1.8.0)
+
+-->
+<div class="instructions">
+    <h3>Optimized Link State Routing Protocol</h3>
+    <div>The <a href="http://olsr.org" target="_blank">OLSR.org</a> OLSR Daemon (olsrd) is an implementation of the IETF <a href="http://tools.ietf.org/html/rfc3626" target="_blank">RFC 3626: Optimized Link State Routing Protocol</a>.</div>
+    <div>OLSR is an IP routing protocol optimized for mobile ad hoc networks, which can also be used on other wireless ad hoc networks. As such it allows mesh routing for any network equipment.</div>
+</div>
+<legend style="position:absolute;right:0px;padding:5px;">
+    <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a></center>
+</legend>
+<div style="padding:15px;border: 1px solid lightgray;width:648px">
+  <table border="0">
+    <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
+    <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
+    <tr><td><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Script to install and setup OLSRd with current configuration after a Firmware downgrade or upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
+  </table>
+</div>
+<fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
+    <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
+    <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
+    <legend>OLSRd IPv4</legend>
+    <div class="addable" data-min="1" data-max="1" data-object="olsrd4config" data-objectify="1">
+        <div><span><input name="olsrd4enabled" type="checkbox" /></span> Enable OLSR daemon</div>
+        <div class="clear"></div><br><div class="clear"></div>
+        <div><span><input name="olsrd4runonboot" type="checkbox" /></span> Run OLSR daemon<br>(on boot, if enabled)</div>
+        <div class="clear"></div><br><div class="clear"></div>
+        <span><b><u>Interfaces:</u></b></span>
+        <div class="addable-template" style="padding-top:0px;">
+            <div class="multi">
+                <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
+                <div>Interface: <input id="olsrd4intf" name="olsrd4interface" size="5" disabled /></div>
+                <div>Address: <input name="ipv4address" size="25" disabled /></div>
+                <div id="olsrd4mainip"></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <!-- although hidden, this add-button needs to exist! //-->
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+        <span><b><u>Settings:</u></b></span>
+        <div class="clear"></div><br><div class="clear"></div>
+        <div><input type="text" name="olsrd4Ip4Broadcast" size="70" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
+        <div class="clear"></div>
+        <div><input type="text" name="olsrd4Hna" size="70" /></div><div><span class="text" data-infotip='IPv4 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 78.41.118.9 255.255.255.255; 78.41.112.214 255.255.255.255'>Hna4</span></div>
+        <div class="clear"></div>
+        <div><input type="text" name="olsrd4LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 193.238.156.229 0.5; 78.41.112.123 0.7'>LinkQualityMult (IPv4)</span></div>
+        <div class="clear"></div>
+        <span><b><u>Plugins:</u></b></span>
+        <div class="clear"></div>
+        <div><span><input name="olsrd4plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (0.0.0.0:2006)</span></div>
+        <div><span><input name="olsrd4plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo (0.0.0.0:9090)</span></div>
+        <div><span><input name="olsrd4plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (0.0.0.0:8080)</span></div>
+    </div>
+</fieldset>
+<fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary expanded">
+    <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
+    <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
+    <legend>OLSRd IPv6</legend>
+    <div class="addable" data-min="1" data-max="1" data-object="olsrd6config" data-objectify="1">
+        <div><span><input name="olsrd6enabled" type="checkbox" /></span> Enable OLSR daemon</div>
+        <div class="clear"></div><br><div class="clear"></div>
+        <div><span><input name="olsrd6runonboot" type="checkbox" /></span> Run OLSR daemon<br>(on boot, if enabled)</div>
+        <div class="clear"></div><br><div class="clear"></div>
+        <span><b><u>Interfaces:</u></b></span>
+        <div class="addable-template" style="padding-top:0px;">
+            <div class="multi">
+                <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
+                <div>Interface: <input id="olsrd6intf" name="olsrd6interface" size="5" disabled /></div>
+                <div>Address: <input name="ipv6address" size="25" disabled /></div>
+                <div id="olsrd6mainip"></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <!-- although hidden, this add-button needs to exist! //-->
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+        <span><b><u>Settings:</u></b></span>
+        <div class="clear"></div><br><div class="clear"></div>
+        <!-- issue: setting ip6 multicast does not work with olsrd 0.6.6.2 - daemon hangs while starting
+        <div><input type="text" name="olsrd6Ip6MulticastSite" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using site-local addresses. If not defined, ff05::15 is used'>Ip6MulticastSite</span></div>
+        <div class="clear"></div>
+        <div><input type="text" name="olsrd6Ip6MulticastGlobal" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using global addresses. If not defined, ff0e::1 is used'>Ip6MulticastGlobal</span></div>
+        <div class="clear"></div>
+        -->
+        <div><input type="text" name="olsrd6Hna" size="70" /></div><div><span class="text" data-infotip='IPv6 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 2a02:60:100:a907::2/64; 2a02:60:100:a905::254/64'>Hna6</span></div>
+        <div class="clear"></div>
+        <div><input type="text" name="olsrd6LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 2a02:60:100:c00::7 0.3; 2a02:60:100:c00::8 0.3'>LinkQualityMult (IPv6)</span></div>
+        <div class="clear"></div>
+        <span><b><u>Plugins:</u></b></span>
+        <div class="clear"></div>
+        <!-- <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo</span></div> -->
+        <div><span><input name="olsrd6plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo ([::]:2007)</span></div>
+        <div><span><input name="olsrd6plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo ([::]:9091)</span></div>
+        <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo ([::]:8081)</span></div>
+    </div>
+</fieldset>
+<fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary expanded">
+    <div title="Optimized Link State Routing Protocol" style="position:absolute; top:10px; right:0px; z-index:-1; padding:10px;">
+        <img src="http://olsrinterop.free.fr/pictures/logo1.png" width="365px" height="210px" style="opacity:0.1; filter:alpha(opacity=1);">
+    </div>
+    <legend>Common OLSR Settings</legend>
+    <span><b><u>Emission intervals:</u></b> (for both IPv4 &amp; IPv6 daemons)<br>If not defined, RFC proposed values will be used in most cases.</span><br>
+    <div class="addable" data-min="1" data-max="1" data-object="olsrdsettings" data-objectify="1">
+        <div class="addable-template">
+            <div class="multi">
+                <div><input type="text" name="HelloInterval" value="5.0" /></div><div><span class="text" data-infotip='Hello interval in seconds(float)'>HelloInterval</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="HelloValidityTime" value="125.0" /></div><div><span class="text" data-infotip='HELLO validity time'>HelloValidityTime</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="TcInterval" value="2.0" /></div><div><span class="text" data-infotip='TC interval in seconds(float)'>TcInterval</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="TcValidityTime" value="500.0" /></div><div><span class="text" data-infotip='TC validity time'>TcValidityTime</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="MidInterval" value="25.0" /></div><div><span class="text" data-infotip='MID interval in seconds(float)'>MidInterval</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="MidValidityTime" value="500.0" /></div><div><span class="text" data-infotip='MID validity time'>MidValidityTime</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="HnaInterval" value="25.0" /></div><div><span class="text" data-infotip='HNA interval in seconds(float)'>HnaInterval</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
+                <div><input type="text" name="HnaValidityTime" value="500.0" /></div><div><span class="text" data-infotip='HNA validity time'>HnaValidityTime</span></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <!-- although hidden, this add-button needs to exist //-->
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+    </div>
+</fieldset>
+<div>
+    <span>Olsrd can autodetect changes in NIC configurations (IP address changes etc.).<br>This is Enabled by default but can be turned off pr. NIC to save CPU cycles.<br></span>
+    <input id="olsrdrestart" name="olsrdrestartnow" type="checkbox" /><span> Restart OLSR daemon(s) on 'Apply'.</span>
+</div>
+<br><br>
+<script>
+function disable() {
+    var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
+    for(var i=0; i<v4nodes.length; i++)
+    {
+        v4nodes[i].disabled = true;
+    }
+    var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
+    for(var i=0; i<v6nodes.length; i++)
+    {
+        v6nodes[i].disabled = true;
+    }
+    var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
+    for(var i=0; i<cfgnodes.length; i++)
+    {
+        cfgnodes[i].disabled = true;
+    }
+    var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
+    for(var i=0; i<restartnodes.length; i++)
+    {
+        restartnodes[i].disabled = true;
+    }
+}
+function enable() {
+    var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
+    for(var i=0; i<v4nodes.length; i++)
+    {
+        if ((v4nodes[i].name == "olsrd4interface") || (v4nodes[i].name == "ipv4address")) {
+            v4nodes[i].disabled = true;
+        } else {
+            v4nodes[i].disabled = false;
+        }
+    }
+    var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
+    for(var i=0; i<v6nodes.length; i++)
+    {
+        if ((v6nodes[i].name == "olsrd6interface") || (v6nodes[i].name == "ipv6address")) {
+            v6nodes[i].disabled = true;
+        } else {
+            v6nodes[i].disabled = false;
+        }
+    }
+    var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
+    for(var i=0; i<cfgnodes.length; i++)
+    {
+        cfgnodes[i].disabled = false;
+    }
+    var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
+    for(var i=0; i<restartnodes.length; i++)
+    {
+        restartnodes[i].disabled = false;
+    }
+}
+function validate() {
+}
+document.onchange=function(){
+    document.getElementById('daemonstatus').disabled = true;
+    var input = document.getElementById('pkgstatus');
+    if(input.value.match(/^error/)) {
+        input.style.color = "red";
+        disable();
+    } else if (input.value.match(/^success/)) {
+        input.style.color = "green";
+        enable();
+    }
+    var v4intf = document.getElementById('olsrd4intf');
+    if(v4intf.value.match(/^lo/)) {
+        // issue: input of olsrd4mainip is not saved to json file but olsrd4mainip is defined
+        // document.getElementById('olsrd4mainip').innerHTML="<div><span class='text'>MainIP:</span></div><div><span><input name='olsrd4mainip' size='10' /></span></div>";
+    }
+    var v6intf = document.getElementById('olsrd6intf');
+    if(v6intf.value.match(/^lo/)) {
+        // issue: input of olsrd6mainip is not saved to json file but olsrd6mainip is defined
+        // document.getElementById('olsrd6mainip').innerHTML="<div><span class='text'>MainIP:</span></div><div><span><input name='olsrd6mainip' size='10' /></span></div>";
+    }
+}
+document.onsubmit=function(){
+    var input = document.getElementById('pkgstatus');
+    if(input.value.match(/^error/)) {
+        disable();
+    } else if (input.value.match(/^success/)) {
+        enable();
+    }
+    document.getElementById('pkgstatus').disabled = true;
+    document.getElementById('daemonstatus').disabled = true;
+}
+</script>

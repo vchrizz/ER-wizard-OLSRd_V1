@@ -1,0 +1,22 @@
+{
+	"rules": {
+        "olsrd4interface": {
+            "required": true,
+            "interfaceName": 1
+        },
+        "olsrd6interface": {
+            "required": true,
+            "interfaceName": 1
+        },
+        "text": {
+            "required": true,
+            "ipv4": 1
+        },
+        "checks": {
+            "required": true
+        },
+        "nchecks": {
+            "required": false
+        }
+	}
+}

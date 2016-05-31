@@ -1,0 +1,704 @@
+#!/bin/bash
+
+#
+# EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
+#
+# Works on EdgeRouter X / X-SFP (tested on System versions 1.7.0 and 1.8.0)
+#
+# known bugs:
+# *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
+# *) wizard.html: wrong position (10px lower than should be) of olsrd logo in mozilla firefox
+# *) wizard-run: onlinecheck: fallback from ipv6 to ipv4 does not work because dns resolver prefers v6 (if ipv6 is configured)
+# *) wizard-run: (if uncommenting auto-renaming wizard) after renaming wizard-dir, wizard still has wrong name in webif until user relogin
+# *) wizard-run: olsrd6: skipping interfaces with site-local only v6 addresses (does not work with olsrd 0.6.6.2 ?)
+# *) wizard-run: olsrd6: setting multicast does not work with olsrd 0.6.6.2
+# *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
+#
+# feature requests in work:
+# *) run olsrd on localhost with config setting "MainIp"
+#
+
+ACTION=$1
+INPUT=$2
+
+#pfx="service upnp listen-on"
+#cmd=/opt/vyatta/sbin/vyatta-cfg-cmd-wrapper
+
+cfgusrdir="/config/user-data/"
+# olsrd installation logfile
+log="olsrd-install.log"
+# default olsrd configuration files
+olsrdconfig='/etc/olsrd/olsrd.conf'
+olsrd4init='/etc/init.d/olsrd'
+olsrd4default='/etc/default/olsrd'
+olsrd4bin='/usr/sbin/olsrd'
+olsrd6init='/etc/init.d/olsrd6'
+olsrd6default='/etc/default/olsrd6'
+olsrd6bin='/usr/sbin/olsrd6'
+# user-defined olsrd configuration files
+olsrd4config="${cfgusrdir}olsrd4.conf"
+olsrd6config="${cfgusrdir}olsrd6.conf"
+# hosts to check for online status
+v4iphost='8.8.8.8'
+v4dnshost='www.google.com'
+v6iphost='2001:4860:4860::8888'
+v6dnshost='www.google.com'
+# both packages, olsrd *and* olsrd-plugins are required and must be specified!
+# german debian mirror
+olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_mipsel.deb"
+olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_mipsel.deb"
+olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
+
+# function to check if connectiviy is given to download packages
+onlinecheck () {
+    ping="ping -c 1 -W 1 ";
+    ping6="ping6 -c 1 -W 1 ";
+    $ping $v4iphost > /dev/null
+    if [[ $? == 0 ]]; then
+        # ipv4 ok
+        $ping6 $v6iphost > /dev/null
+        if [[ $? == 0 ]]; then
+            # ipv6 ok
+            $ping6 $v6dnshost > /dev/null
+            if [[ $? == 0 ]]; then
+                # ipv6dns ok
+                return 0
+            else
+                # ipv6dns not ok
+                return 1
+            fi
+        else
+            # ipv6 not ok, fallback to ipv4
+            # issue: dns resolver prefers v6 (if ipv6 is configured)
+            $ping $v4dnshost > /dev/null
+            if [[ $? == 0 ]]; then
+                # ipv4dns ok
+                return 0
+            else
+                # ipv4dns not ok
+                return 1
+            fi
+        fi
+    else
+        # ipv4 not ok
+        return 1
+    fi
+}
+
+# function to download (if not found in $cfgusrdir) and install olsrd
+installolsrd () {
+    if [ ! -e ${cfgusrdir}olsrd_*_mipsel.deb ] || [ ! -e ${cfgusrdir}olsrd-plugins_*_mipsel.deb ]; then
+        onlinecheck
+        if [[ $? == 0 ]]; then
+            echo -n "no olsrd mipsel packages found in $cfgusrdir - need to download olsrd packages ... " >> $cfgusrdir$log
+            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdmirror) ${olsrdmirror} >> $cfgusrdir$log
+            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdplgmirror) ${olsrdplgmirror} >> $cfgusrdir$log
+            if [[ $? == 0 ]]; then
+                echo "done." >> $cfgusrdir$log
+                return 0
+            else
+                echo "failed to download olsrd package." >> $cfgusrdir$log
+                return 1
+            fi
+        else
+            echo "no internet connection available to download olsrd packages!" >> $cfgusrdir$log
+            echo "check internet connection! (is ip/gateway/dns set correctly?)" >> $cfgusrdir$log
+            return 1
+        fi
+    fi
+    if [ -e ${cfgusrdir}olsrd_*_mipsel.deb ] && [ -e ${cfgusrdir}olsrd-plugins_*_mipsel.deb ]; then
+        dpkg -i ${cfgusrdir}olsrd_*_mipsel.deb >> $cfgusrdir$log
+        statusolsrd=$?
+        dpkg -i ${cfgusrdir}olsrd-plugins_*_mipsel.deb >> $cfgusrdir$log
+        statusplugins=$?
+        if [[ $statusolsrd == 0 ]] && [[ $statusplugins == 0 ]]; then
+            echo "success: packages olsrd and olsrd-plugins installed correctly. done." >> $cfgusrdir$log
+            return 0
+        else
+            echo "error: problem installing olsrd or olsrd-plugins." >> $cfgusrdir$log
+            return 1
+        fi
+    else
+        echo "error: olsrd mipsel debian packages not found to install in $cfgusrdir (both olsrd *and* plugins required!)" >> $cfgusrdir$log
+        return 1
+    fi
+}
+
+setupv4olsrd () {
+    if [[ -w $cfgusrdir$(basename $olsrd4default).default ]]; then
+        cp -f $cfgusrdir$(basename $olsrd4default).default $olsrd4default > /dev/null
+    fi
+    olsrd4cnfesc=$(echo $olsrd4config | sed -e 's/[\/&]/\\&/g')
+    if [[ $(grep DAEMON_OPTS $olsrd4default) == *"-f"* ]]; then
+        old4config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd4default | tr -d \")
+        cp $old4config $olsrd4config > /dev/null
+        sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd4cnfesc\"/" $olsrd4default
+    else
+        sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd4cnfesc\"/" $olsrd4default
+    fi
+    if [[ ! -w $olsrd4config ]]; then
+        cp $olsrdconfig $olsrd4config > /dev/null
+    fi
+}
+# function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
+# because olsrd runs only in ipv4 *OR* ipv6 mode
+# (olsrd2 is able to run v4 and v6 in one instance)
+setupv6olsrd () {
+    if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
+        cp -f $cfgusrdir$(basename $olsrd6default).default $olsrd6default > /dev/null
+        defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+            update-rc.d olsrd6 defaults >> /dev/null
+        fi
+    fi
+    olsrd6cnfesc=$(echo $olsrd6config | sed -e 's/[\/&]/\\&/g')
+    if [[ ! -w $olsrd6default ]]; then
+        cp $olsrd4default $olsrd6default > /dev/null
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
+        sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
+        sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
+    else
+        if [[ $(grep DAEMON_OPTS $olsrd6default) == *"-f"* ]]; then
+            old6config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \")
+            cp $old6config $olsrd6config > /dev/null
+            sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/" $olsrd6default
+        else
+            sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/" $olsrd6default
+        fi
+    fi
+    if [[ ! -w $olsrd6config ]]; then
+        cp $olsrdconfig $olsrd6config > /dev/null
+        sed -i "s/^IpVersion.*4/IpVersion\ 6/" $olsrd6config
+        origIFS=$IFS
+        IFS=";"
+        for hna in $(sed -n '/Hna4/,/}/p' $olsrd6config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g'); do
+            sed -i "/$hna/d" $olsrd6config
+        done
+        for lqmult in $(grep LinkQualityMult $olsrd6config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'); do
+            sed -i "/$lqmult/d" $olsrd6config
+        done
+        IFS=$origIFS
+        sed -i 's/Ip4Broadcast/#Ip4Broadcast/' $olsrd6config
+    fi
+    if [[ ! -w $olsrd6init ]]; then
+        cp -f $olsrd4init $olsrd6init
+        sed -i 's/olsrd/olsrd6/g' $olsrd6init
+        #sed -i 's/^DAEMON=.*/DAEMON=\/usr\/sbin\/olsrd/' $olsrd6init
+    fi
+    if [[ ! -e $olsrd6bin ]]; then
+        cp -f $olsrd4bin $olsrd6bin
+    fi
+}
+
+# function called when you click the wizard
+load () {
+# rename custom-named wizard to "OLSRd_V1"
+# issue: after renaming wizard-dir, wizard still has wrong name in webif until relogin ...
+#mv $(dirname $0) $(dirname $0 | rev | cut -d"/" -f2- | rev)/OLSRd_V1
+
+    #
+    # try to install olsrd and show status (with version information if installed)
+    #
+    olsrdpkgstatus="\"pkgstatus\":\"error: not installed.\""
+    dpkg -l olsrd olsrd-plugins > $cfgusrdir$log
+    if [[ $? != 0 ]]; then
+        echo "olsrd packages not installed! need to install packages." >> $cfgusrdir$log
+        installolsrd
+        if [[ $? == 0 ]]; then
+            setupv4olsrd
+            setupv6olsrd
+            echo "olsrd packages installed. all done." >> $cfgusrdir$log
+            olsrdpkgstatus="\"pkgstatus\":\"success: running olsrd installation ... completed.\""
+        else
+            olsrdpkgstatus="\"pkgstatus\":\"error: not installed, download or install problem. check $cfgusrdir$log\""
+        fi
+    else
+        setupv4olsrd
+        setupv6olsrd
+        olsrdver=$(awk '/^ii.*olsrd\ / { print $3 }' $cfgusrdir$log)
+        olsrdplgver=$(awk '/^ii.*olsrd-plugins/ { print $3 }' $cfgusrdir$log)
+        echo "olsrd already installed. nothing to do." >> $cfgusrdir$log
+        olsrdpkgstatus="\"pkgstatus\":\"success: packages olsrd $olsrdver and olsrd-plugins $olsrdplgver installed.\""
+    fi
+
+    #
+    # get network status of daemon(s) if running
+    #
+    v4netstatus=$(netstat -4aunp | awk '/olsrd/ { print $4" "$6;exit }')
+    if [ -z $v4netstatus ]; then v4netstatus="not running"; fi
+    v6netstatus=$(netstat -6aunp | awk '/olsrd/ { print $4" "$6;exit }')
+    if [ -z $v6netstatus ]; then v6netstatus="not running"; fi
+    #olsrdstatus="\"olsrdstatus\":[{\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\"}]"
+    olsrddaemonstatus="\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\""
+
+    #
+    # post-config script
+    #
+    olsrdsetupscript='"olsrdsetupscript":""'
+    if [[ -w $olsrdsetupscriptfile ]]; then
+        olsrdsetupscript='"olsrdsetupscript":"on"'
+    fi
+
+    ###############################
+    #  IPv4 OLSRd LOAD function   #
+    ###############################
+    # get current olsrd4 configuration and return configured values to wizard.html
+    olsrd4enabled='"olsrd4enabled":"",'
+    if [[ -w $olsrd4default && $(grep START_OLSRD $olsrd4default) != \#* ]]; then
+        olsrd4enabled='"olsrd4enabled":"on",'
+    fi
+    olsrd4runonboot='"olsrd4runonboot":"",'
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    if [[ $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
+        olsrd4runonboot='"olsrd4runonboot":"on",'
+    fi
+    olsrd4interfaces=''
+    olsrd4meshif=$(awk -F= '/MESH_IF=/ { print $2 }' $olsrd4default | tr -d \")
+    # get all running ethernet interfaces in format eth0;192.168.1.1/24
+    v4interfacelist=$(ip -f inet addr | awk '/^[0-9]:*|inet/ { print $2 }' | sed ':a;N;$!ba;s/:\n/;/g' | grep ";")
+    for v4if in $v4interfacelist; do
+        v4ifinterface=$(echo $v4if | cut -d";" -f1)
+        v4ifaddress=$(echo $v4if | cut -d";" -f2)
+        # remove trailing @interfacename if occurred (eg. when defining vlans)
+        v4ifinterface=$(echo ${v4ifinterface} | cut -d@ -f1)
+        # skip loopback and physical switch interfaces
+        if [[ "${v4ifinterface}" == "lo" ]] || [[ "${v4ifinterface}" == "switch0" ]]; then
+            continue
+        fi
+        intfstatus=''
+        if [[ "$olsrd4meshif" != "${olsrd4meshif/ /}" ]]; then
+            #olsrd4meshif=${olsrd4meshif#"\""}
+            #olsrd4meshif=${olsrd4meshif%"\""}
+            olsrd4meshif=$(echo $olsrd4meshif | tr -d \")
+            for mintf in $olsrd4meshif; do
+                if [[ "$mintf" == "${v4ifinterface}" ]]; then
+                    intfstatus='"enabled":"on",'
+                fi
+            done
+        else
+            if [[ "$olsrd4meshif" == "${v4ifinterface}" ]]; then
+                intfstatus='"enabled":"on",'
+            fi
+        fi
+        olsrd4interfaces=$olsrd4interfaces'{'$intfstatus'"olsrd4interface":"'${v4ifinterface}'","ipv4address":"'${v4ifaddress}'"},'
+    done
+    olsrd4interfaces=${olsrd4interfaces%","}
+    olsrd4ip4broadcast="\"olsrd4Ip4Broadcast\":\"$(awk '/Ip4Broadcast/ { print $2 }' $olsrd4config)\","
+    olsrd4hna="\"olsrd4Hna\":\"$(sed -n '/Hna4/,/}/p' $olsrd4config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g')\","
+    olsrd4lqmult="\"olsrd4LinkQualityMult\":\"$(egrep -v "^[[:space:]]*#" $olsrd4config | awk '/LinkQualityMult/ { print $2" "$3";" }' | sed ':a;N;$!ba;s/\n//g')\","
+    #grep LinkQualityMult $olsrd4config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'
+    olsrd4plugins=''
+    olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) != \#* ]]; then
+        olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"on",'
+    fi
+    olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) != \#* ]]; then
+        olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"on",'
+    fi
+    olsrd4plghttpinfo='"olsrd4plghttpinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) != \#* ]]; then
+        olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",'
+    fi
+    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo
+
+    ###############################
+    #  IPv6 OLSRd LOAD function   #
+    ###############################
+    # get current olsrd6 configuration and return configured values to wizard.html
+    olsrd6enabled='"olsrd6enabled":"",'
+    if [[ -w $olsrd6default && $(grep START_OLSRD $olsrd6default) != \#* ]]; then
+        olsrd6enabled='"olsrd6enabled":"on",'
+    fi
+    olsrd6runonboot='"olsrd6runonboot":"",'
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    if [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+        olsrd6runonboot='"olsrd6runonboot":"on",'
+    fi
+    olsrd6interfaces=''
+    meshif=$(awk -F= '/MESH_IF=/ { print $2 }' $olsrd6default | tr -d \")
+    # get all running ethernet interfaces in format eth0;fe80::46d9:e7ff:fe51:1030/64
+    v6interfacelist=$(ip -f inet6 addr | awk '/^[0-9]:*|inet/ { print $2 }' | sed ':a;N;$!ba;s/:\n/;/g' | grep ";")
+    for v6if in $v6interfacelist; do
+        v6ifinterface=$(echo $v6if | cut -d";" -f1)
+        v6ifaddress=$(echo $v6if | cut -d";" -f2)
+        # remove trailing @interfacename if occurred (eg. when defining vlans)
+        v6ifinterface=$(echo ${v6ifinterface} | cut -d@ -f1)
+        # skip loopback and physical switch interfaces
+        # issue: skip interfaces with site-local v6 addresses (setting multicast does not work with olsrd 0.6.6.2)
+        if [[ "${v6ifinterface}" == "lo" ]] || [[ "${v6ifinterface}" == "switch0" ]] || [[ "${v6ifaddress}" == "fe80"* ]]; then
+            continue
+        fi
+        intfstatus=''
+        if [[ "$meshif" != "${meshif/ /}" ]]; then
+            #meshif=${meshif#"\""}
+            #meshif=${meshif%"\""}
+            meshif=$(echo $meshif | tr -d \")
+            for mintf in $meshif; do
+                if [[ "$mintf" == "${v6ifinterface}" ]]; then
+                    intfstatus='"enabled":"on",'
+                fi
+            done
+        else
+            if [[ "$meshif" == "${v6ifinterface}" ]]; then
+                intfstatus='"enabled":"on",'
+            fi
+        fi
+        olsrd6interfaces=$olsrd6interfaces'{'$intfstatus'"olsrd6interface":"'${v6ifinterface}'","ipv6address":"'${v6ifaddress}'"},'
+    done
+    olsrd6interfaces=${olsrd6interfaces%","}
+    # issue: setting multicast does not work with olsrd 0.6.6.2
+    #olsrd6ip6multicastsite="\"olsrd6Ip6MulticastSite\":\"$(awk '/Ip6MulticastSite/ { print $2 }' $olsrd6config)\","
+    #olsrd6ip6multicastglobal="\"olsrd6Ip6MulticastGlobal\":\"$(awk '/Ip6MulticastGlobal/ { print $2 }' $olsrd6config)\","
+    olsrd6hna="\"olsrd6Hna\":\"$(sed -n '/Hna6/,/}/p' $olsrd6config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g')\","
+    olsrd6lqmult="\"olsrd6LinkQualityMult\":\"$(egrep -v "^[[:space:]]*#" $olsrd6config | awk '/LinkQualityMult/ { print $2" "$3";" }' | sed ':a;N;$!ba;s/\n//g')\","
+    #grep LinkQualityMult $olsrd6config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'
+    olsrd6plugins=''
+    olsrd6plgtxtinfo='"olsrd6plgtxtinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) != \#* ]]; then
+        olsrd6plgtxtinfo='"olsrd6plgtxtinfo":"on",'
+    fi
+    olsrd6plgjsoninfo='"olsrd6plgjsoninfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) != \#* ]]; then
+        olsrd6plgjsoninfo='"olsrd6plgjsoninfo":"on",'
+    fi
+    olsrd6plghttpinfo='"olsrd6plghttpinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) != \#* ]]; then
+        olsrd6plghttpinfo='"olsrd6plghttpinfo":"on",'
+    fi
+    olsrd6plugins=$olsrd6plugins$olsrd6plgtxtinfo$olsrd6plgjsoninfo$olsrd6plghttpinfo
+
+    #
+    # get all variables together for output
+    #
+    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4ip4broadcast$olsrd4hna$olsrd4lqmult$olsrd4plugins\"olsrd4config\":[$olsrd4interfaces]"
+    #ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6ip6multicastsite$olsrd6ip6multicastglobal$olsrd6hna$olsrd6lqmult\"olsrd6config\":[$olsrd6interfaces]"
+    ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
+    ###echo -n "{\"success\":\"1\",\"data\":{ \"olsrdstatus\":[{$olsrdpkgstatus,$olsrddaemonstatus}],$ipv4conf,$ipv6conf },"
+    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$ipv4conf,$ipv6conf },"
+    #echo "\"definition\":{ \"olsrd4interface\":$ilist, \"ipv4address\":$ipv4list, \"olsrd6interface\":$ilist, \"ipv6address\":$ipv6list }}"
+    echo "\"definition\":{ }}"
+}
+
+# function called when you click apply
+apply () {
+    # setup script
+    olsrdsetupscript=$(jq -M -r '.olsrdsetupscript' $INPUT)
+    if [[ "$olsrdsetupscript" == "on" ]]; then
+        if [[ ! -w $olsrdsetupscript ]]; then
+            if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
+                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile
+            else
+                cat >$olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
+#!/bin/bash
+olsrdv1wizard=""
+for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
+    if [[ $(grep 'OLSRd_V1' $i) ]]; then
+        olsrdv1wizard=$i
+    else
+        echo "error: OLSRd_V1 wizard not found!"
+        exit
+    fi
+done
+cfgusrdir="/config/user-data/"
+# olsrd installation logfile
+log="olsrd-install.log"
+# default olsrd configuration files
+olsrdconfig='/etc/olsrd/olsrd.conf'
+olsrd4init='/etc/init.d/olsrd'
+olsrd4default='/etc/default/olsrd'
+olsrd4bin='/usr/sbin/olsrd'
+olsrd6init='/etc/init.d/olsrd6'
+olsrd6default='/etc/default/olsrd6'
+olsrd6bin='/usr/sbin/olsrd6'
+# user-defined olsrd configuration files
+olsrd4config="${cfgusrdir}olsrd4.conf"
+olsrd6config="${cfgusrdir}olsrd6.conf"
+# hosts to check for online status
+v4iphost='8.8.8.8'
+v4dnshost='www.google.com'
+v6iphost='2001:4860:4860::8888'
+v6dnshost='www.google.com'
+# both packages, olsrd *and* olsrd-plugins are required and must be specified!
+# german debian mirror
+olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_mipsel.deb"
+olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_mipsel.deb"
+echo '#!/bin/bash' > func.sh
+sed -n "/^onlinecheck ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^load ()/,/^}/p" $olsrdv1wizard >> func.sh
+source func.sh
+load
+rm -f func.sh
+# if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
+if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
+    if [[ $(grep ebtables /etc/rc.local) != *"FORWARD DROP"* ]]; then
+        sed -i 's/^exit 0/#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0/' /etc/rc.local
+        ebtables -P FORWARD DROP
+    fi
+else
+    if [[ $(grep ebtables /etc/rc.local) == *"FORWARD DROP"* ]]; then
+        sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+        sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
+        ebtables -P FORWARD ACCEPT
+    fi
+fi
+# restart daemon(s)
+$olsrd4init restart >> $cfgusrdir$log
+$olsrd6init restart >> $cfgusrdir$log
+exit 0
+ENDSCRIPTCONTENT
+                chmod +x $olsrdsetupscriptfile
+            fi
+        fi
+    else
+        if [[ -w $olsrdsetupscriptfile ]]; then
+            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile)
+        fi
+        rm -f $olsrdsetupscriptfile
+    fi
+
+    ###############################
+    #  IPv4 OLSRd APPLY function  #
+    ###############################
+    # enable olsrd4, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
+    olsrd4enabled=$(jq -M -r '.olsrd4enabled' $INPUT)
+    if [[ "$olsrd4enabled" == "on" ]]; then
+        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
+    else
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4default
+    fi
+    olsrd4runonboot=$(jq -M -r '.olsrd4runonboot' $INPUT)
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    if [[ "$olsrd4runonboot" == "on" ]]; then
+        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
+            update-rc.d olsrd defaults >> /dev/null
+        fi
+    else
+        if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
+            update-rc.d -f olsrd remove >> /dev/null
+        fi
+    fi
+    # set checked interfaces, else set default interface
+    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT)"
+    if [[ ! -z $enabledv4interfaces ]]; then
+        enabledv4interfaces=$(echo $enabledv4interfaces | sed 's/\ /\\\ /')
+        sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv4interfaces\"/" $olsrd4default
+    else
+        sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd4default
+    fi
+    # backup /etc/default/olsrd
+    cp -f $olsrd4default $cfgusrdir$(basename $olsrd4default).default > /dev/null
+    # set ip4broadcast
+    olsrd4ip4broadcast=$(jq -M -r '.olsrd4Ip4Broadcast' $INPUT)
+    sed -i "s/Ip4Broadcast.*/Ip4Broadcast\ $olsrd4ip4broadcast/" $olsrd4config
+    # set v4 hna and lqmult
+    origIFS=$IFS
+    IFS=";"
+    # hna4 remove all entries in config
+    for hna in $(sed -n '/Hna4/,/}/p' $olsrd4config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g'); do
+        sed -i "/$hna/d" $olsrd4config
+    done
+    # hna4 add entries from input
+    olsrd4hna=$(jq -M -r '.olsrd4Hna' $INPUT)
+    hna4linenr=$(grep -n "Hna4" $olsrd4config | cut -d: -f1)
+    for hna in $olsrd4hna; do
+        sed -i "$(($hna4linenr+2))i$hna" $olsrd4config
+    done
+    # lqmult remove all entries in config
+    for lqmult in $(grep LinkQualityMult $olsrd4config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'); do
+        sed -i "/$lqmult/d" $olsrd4config
+    done
+    # lqmult add entries from input
+    olsrd4lqmult=$(jq -M -r '.olsrd4LinkQualityMult' $INPUT)
+    lqmult4linenr=$(grep -m1 -n LinkQualityMult $olsrd4config | cut -d: -f1)
+    for lqmult in $olsrd4lqmult; do
+        sed -i "$(($lqmult4linenr+1))iLinkQualityMult\ $lqmult" $olsrd4config
+    done
+    IFS=$origIFS
+    olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT)
+    if [[ "$olsrd4plgtxtinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd4config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd4config
+        fi
+    fi
+    olsrd4plgjsoninfo=$(jq -M -r '.olsrd4plgjsoninfo' $INPUT)
+    if [[ "$olsrd4plgjsoninfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd4config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd4config
+        fi
+    fi
+    olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT)
+    if [[ "$olsrd4plghttpinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd4config
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8080"/' $olsrd4config
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd4config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4config
+        fi
+    fi
+
+    ###############################
+    #  IPv6 OLSRd APPLY function  #
+    ###############################
+    # enable olsrd6, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
+    olsrd6enabled=$(jq -M -r '.olsrd6enabled' $INPUT)
+    if [[ "$olsrd6enabled" == "on" ]]; then
+        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
+    else
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
+    fi
+    olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT)
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    if [[ "$olsrd6runonboot" == "on" ]]; then
+        if [[ ! -e /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
+            update-rc.d olsrd6 defaults >> /dev/null
+        fi
+    else
+        if [[ -e /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
+            update-rc.d -f olsrd6 remove >> /dev/null
+        fi
+    fi
+    # set checked interfaces, else set default interface
+    enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT)"
+    if [[ ! -z $enabledv6interfaces ]]; then
+        enabledv6interfaces=$(echo $enabledv6interfaces | sed 's/\ /\\\ /')
+        sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv6interfaces\"/" $olsrd6default
+    else
+        sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd6default
+    fi
+    # backup /etc/default/olsrd6 to /config/user-data/olsrd.default
+    cp -f $olsrd6default $cfgusrdir$(basename $olsrd6default).default > /dev/null
+    # set v6 hna and lqmult
+    origIFS=$IFS
+    IFS=";"
+    # hna6 remove all entries in config
+    for hna in $(sed -n '/Hna6/,/}/p' $olsrd6config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g'); do
+        sed -i "/$hna/d" $olsrd6config
+    done
+    # hna6 add entries from input
+    olsrd6hna=$(jq -M -r '.olsrd6Hna' $INPUT)
+    hna6linenr=$(grep -n "Hna6" $olsrd6config | cut -d: -f1)
+    for hna in $olsrd6hna; do
+        sed -i "$(($hna6linenr+2))i$hna" $olsrd6config
+    done
+    # lqmult remove all entries in config
+    for lqmult in $(grep LinkQualityMult $olsrd6config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'); do
+        sed -i "/$lqmult/d" $olsrd6config
+    done
+    # lqmult add entries from input
+    olsrd6lqmult=$(jq -M -r '.olsrd6LinkQualityMult' $INPUT)
+    lqmult6linenr=$(grep -m1 -n LinkQualityMult $olsrd6config | cut -d: -f1)
+    for lqmult in $olsrd6lqmult; do
+        sed -i "$(($lqmult6linenr+1))iLinkQualityMult\ $lqmult" $olsrd6config
+    done
+    IFS=$origIFS
+    olsrd6plgtxtinfo=$(jq -M -r '.olsrd6plgtxtinfo' $INPUT)
+    if [[ "$olsrd6plgtxtinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/2006/2007/' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/0.0.0.0/::/' $olsrd6config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd6config
+        fi
+    fi
+    olsrd6plgjsoninfo=$(jq -M -r '.olsrd6plgjsoninfo' $INPUT)
+    if [[ "$olsrd6plgjsoninfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/9090/9091/' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/0.0.0.0/::/' $olsrd6config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd6config
+        fi
+    fi
+    olsrd6plghttpinfo=$(jq -M -r '.olsrd6plghttpinfo' $INPUT)
+    if [[ "$olsrd6plghttpinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8081"/' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd6config
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/0.0.0.0/::/g' $olsrd6config
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd6config
+        fi
+    fi
+
+    #
+    # set emission intervals
+    #
+    HelloValidityTime="$(jq -M -r '.olsrdsettings[] | .HelloValidityTime' $INPUT)"
+    HelloInterval="$(jq -M -r '.olsrdsettings[] | .HelloInterval' $INPUT)"
+    TcValidityTime="$(jq -M -r '.olsrdsettings[] | .TcValidityTime' $INPUT)"
+    TcInterval="$(jq -M -r '.olsrdsettings[] | .TcInterval' $INPUT)"
+    MidValidityTime="$(jq -M -r '.olsrdsettings[] | .MidValidityTime' $INPUT)"
+    MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT)"
+    HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT)"
+    HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT)"
+    sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config $olsrd6config
+    sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config $olsrd6config
+    sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config $olsrd6config
+    sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config $olsrd6config
+    sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config $olsrd6config
+    sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
+    sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
+    sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
+
+    # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
+    if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
+        if [[ $(grep ebtables /etc/rc.local) != *"FORWARD DROP"* ]]; then
+            sed -i 's/^exit 0/#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0/' /etc/rc.local
+            ebtables -P FORWARD DROP
+        fi
+    else
+        if [[ $(grep ebtables /etc/rc.local) == *"FORWARD DROP"* ]]; then
+            sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
+            ebtables -P FORWARD ACCEPT
+        fi
+    fi
+
+    olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT)
+    if [[ "$olsrdrestartnow" == "on" ]]; then
+        # restart daemon(s)
+        $olsrd4init restart >> $cfgusrdir$log
+        $olsrd6init restart >> $cfgusrdir$log
+    fi
+
+    # for debugging purposes
+    cp $INPUT /tmp/result.json
+
+    echo '{"success":"1"}'
+}
+
+case "$ACTION" in
+    load)
+        load
+        ;;
+    apply)
+        apply
+        ;;
+esac
+
+# call arguments verbatim:
+#$@
