@@ -11,6 +11,7 @@ OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
     *) wizard-run: olsrd6: skipping interfaces with site-local only v6 addresses (does not work with olsrd 0.6.6.2 ?)
     *) wizard-run: olsrd6: setting multicast does not work with olsrd 0.6.6.2
     *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
+    *) 06/2016 fixed wizard-run: added architecture check for ER (mips) and ER-X (mipsel)
 
     feature requests in work:
     *) run olsrd on localhost with config setting "MainIp"
