@@ -1,7 +1,7 @@
 # ER-wizard-OLSRd_V1
 OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
 
-    Works on EdgeRouter and EdgeRouter X / X-SFP (tested on System versions 1.7.0 and 1.8.0)
+    Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+).
 
     known bugs:
     *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
