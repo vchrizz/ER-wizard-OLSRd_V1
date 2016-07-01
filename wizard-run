@@ -3,7 +3,7 @@
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 #
-# Works on EdgeRouter X / X-SFP (tested on System versions 1.7.0 and 1.8.0)
+# Works on EdgeRouter and EdgeRouter X / X-SFP (tested on System versions 1.7.0 and 1.8.0)
 #
 # known bugs:
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
@@ -13,6 +13,7 @@
 # *) wizard-run: olsrd6: skipping interfaces with site-local only v6 addresses (does not work with olsrd 0.6.6.2 ?)
 # *) wizard-run: olsrd6: setting multicast does not work with olsrd 0.6.6.2
 # *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
+# *) 06/2016 fixed wizard-run: added architecture check for ER (mips) and ER-X (mipsel)
 #
 # feature requests in work:
 # *) run olsrd on localhost with config setting "MainIp"
@@ -43,10 +44,16 @@ v4iphost='8.8.8.8'
 v4dnshost='www.google.com'
 v6iphost='2001:4860:4860::8888'
 v6dnshost='www.google.com'
+# check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
+if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') ]; then
+    arch='mips'
+else
+    arch='mipsel'
+fi
 # both packages, olsrd *and* olsrd-plugins are required and must be specified!
 # german debian mirror
-olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_mipsel.deb"
-olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_mipsel.deb"
+olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
+olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 
 # function to check if connectiviy is given to download packages
@@ -87,10 +94,10 @@ onlinecheck () {
 
 # function to download (if not found in $cfgusrdir) and install olsrd
 installolsrd () {
-    if [ ! -e ${cfgusrdir}olsrd_*_mipsel.deb ] || [ ! -e ${cfgusrdir}olsrd-plugins_*_mipsel.deb ]; then
+    if [ ! -e ${cfgusrdir}olsrd_*_${arch}.deb ] || [ ! -e ${cfgusrdir}olsrd-plugins_*_${arch}.deb ]; then
         onlinecheck
         if [[ $? == 0 ]]; then
-            echo -n "no olsrd mipsel packages found in $cfgusrdir - need to download olsrd packages ... " >> $cfgusrdir$log
+            echo -n "no olsrd $arch packages found in $cfgusrdir - need to download olsrd packages ... " >> $cfgusrdir$log
             curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdmirror) ${olsrdmirror} >> $cfgusrdir$log
             curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdplgmirror) ${olsrdplgmirror} >> $cfgusrdir$log
             if [[ $? == 0 ]]; then
@@ -106,10 +113,10 @@ installolsrd () {
             return 1
         fi
     fi
-    if [ -e ${cfgusrdir}olsrd_*_mipsel.deb ] && [ -e ${cfgusrdir}olsrd-plugins_*_mipsel.deb ]; then
-        dpkg -i ${cfgusrdir}olsrd_*_mipsel.deb >> $cfgusrdir$log
+    if [ -e ${cfgusrdir}olsrd_*_${arch}.deb ] && [ -e ${cfgusrdir}olsrd-plugins_*_${arch}.deb ]; then
+        dpkg -i ${cfgusrdir}olsrd_*_${arch}.deb >> $cfgusrdir$log
         statusolsrd=$?
-        dpkg -i ${cfgusrdir}olsrd-plugins_*_mipsel.deb >> $cfgusrdir$log
+        dpkg -i ${cfgusrdir}olsrd-plugins_*_${arch}.deb >> $cfgusrdir$log
         statusplugins=$?
         if [[ $statusolsrd == 0 ]] && [[ $statusplugins == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >> $cfgusrdir$log
@@ -119,7 +126,7 @@ installolsrd () {
             return 1
         fi
     else
-        echo "error: olsrd mipsel debian packages not found to install in $cfgusrdir (both olsrd *and* plugins required!)" >> $cfgusrdir$log
+        echo "error: olsrd $arch debian packages not found to install in $cfgusrdir (both olsrd *and* plugins required!)" >> $cfgusrdir$log
         return 1
     fi
 }
@@ -419,10 +426,16 @@ v4iphost='8.8.8.8'
 v4dnshost='www.google.com'
 v6iphost='2001:4860:4860::8888'
 v6dnshost='www.google.com'
+# check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
+if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') ]; then
+    arch='mips'
+else
+    arch='mipsel'
+fi
 # both packages, olsrd *and* olsrd-plugins are required and must be specified!
 # german debian mirror
-olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_mipsel.deb"
-olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_mipsel.deb"
+olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
+olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 echo '#!/bin/bash' > func.sh
 sed -n "/^onlinecheck ()/,/^}/p" $olsrdv1wizard >> func.sh
 sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
