@@ -13,5 +13,5 @@ OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
     updates:
     *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
     *) 06/2016 fixed wizard-run: added architecture check for ER (mips) and ER-X (mipsel)
-    feature requests in work:
+    feature requests:
     *) run olsrd on localhost with config setting "MainIp"
