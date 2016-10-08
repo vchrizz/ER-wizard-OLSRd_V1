@@ -1,6 +1,8 @@
 # ER-wizard-OLSRd_V1
 OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
 
+    Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
+
     Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+).
 
     known bugs:
