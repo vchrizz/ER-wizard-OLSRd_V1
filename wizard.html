@@ -17,7 +17,7 @@ Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
   <table border="0">
     <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
     <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
-    <tr><td><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Script to install and setup OLSRd with current configuration after a Firmware downgrade or upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
+    <tr><td><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
   </table>
 </div>
 <fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
