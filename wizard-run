@@ -17,6 +17,7 @@
 # *) 10/2016 fixed wizard-run: added olsrd 0.6.6.2-1 packages in base64 format for offline installation
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mipsel architecture
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mips architecture
+# *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
 #
 
 ACTION=$1
@@ -24,6 +25,7 @@ INPUT=$2
 
 cfgusrdir="/config/user-data/"
 # olsrd installation logfile
+#log="olsrd-install-$(date +%Y-%m-%d).log"
 log="olsrd-install.log"
 # default olsrd configuration files
 olsrdconfig='/etc/olsrd/olsrd.conf'
@@ -53,6 +55,12 @@ olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$
 olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 
+#
+# DO NOT EDIT BELOW HERE !
+#
+
+echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
+
 #base64begin: olsrd packages for offline use
 # !dont edit or remove this comment!
 # other files than wizard-run/wizard.html/validator.json are ignored when uploading wizards to the router.
@@ -60,6 +68,7 @@ olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 # here are the required packages for mips and mipsel in base64 format.
 # they will be extracted into $cfgusrdir at first run of this script.
 #
+echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
 if [ $arch == 'mips' ]; then
 # base64: olsrd_0.9.0.3-1_mips.deb
 echo "
@@ -4776,7 +4785,8 @@ G7zPmPqCcTY3yVC8s/L9cxMP96f4HlWeDb89Em+e8FkSzBJj1sDbp+ABHC9bvK8qeFAWvGzz/YaC
 VwR4GG93hw3eIQUP9ITHEtVs6ntMwQMdTUxmyfe7iOeSsYoBD66ccgs/xD1l4j18njG8bPn9X5SD
 xAO7y2N12snldXkf8JIugXeTx6YeP5X1kDDO706L3uP1a6UPYLBxsPPzJm3yvQB6/yslePl5JS+l
 H+UUzuS3Jd9ip3KU73kz8XJutMF79/Pu593Pu593P+9+3v28+3n38//J5/8BpOAMtAD4DAAK
-" | base64 -d -i > $cfgusrdir/olsrd_0.9.0.3-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mips.deb
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >> $cfgusrdir$log; else echo "extraction of $arch olsrd failed" >> $cfgusrdir$log; fi
 # base64: olsrd-plugins_0.9.0.3-1_mips.deb
 echo "
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzMzODYxMiAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
@@ -9324,7 +9334,8 @@ rxnp6FqT/picoLaX4ssT4OkANvrzBpR0tMy3jHSwliX0ZwnfOaQHmg7gemsXkO6ERb1/hvBhH9B0
 PJ3qXZ5NF/IJ+ka3BhPtQ4lPpfLJNewKT0Mhezl1hOHvgQceYE/4U5/sfcXKeyP3rYisuC8M6VZG
 IitXEm2lHTANK+C/8JVBwFChGM9rGslns0WndG7xv6J/Fv2fGUzGL7PHL7P/V9z/wAP38f5HYGh/
 N0SuBgL+jff/B38f/H3w98HfB38f/H3w92/v7/8H56UunwBYDAA=
-" | base64 -d -i > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >> $cfgusrdir$log; else echo "extraction of $arch olsrd-plugins failed" >> $cfgusrdir$log; fi
 fi
 if [ $arch == 'mipsel' ]; then
 # base64: olsrd_0.9.0.3-1_mipsel.deb
@@ -14047,7 +14058,8 @@ Poj1v48JPM5a7hc51b+sjndCwssHvPwseF+U8CyAZ4lkzvcrEl4R4BUB3kQGvLMSHvoQnY6kyr1e
 l16Pn4p8dR/miFdv0AcYfpXi75qxuijUe0V6vtch/BLkXn9/dTiZl9yPCnNS6eXtT9VTOdLvCgPe
 vTnpeMvP8rP8LD/Lz/Kz/Cw/y8/ys/wsP8vP8rP8LD/Lz/Kz/Cw/y8/ys/wsP8vP8rP8LD/Lz/Kz
 /Cw/y8/ys/wsP8vP8rP8/Md7/j+LLUgMACANAAo=
-" | base64 -d -i > $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >> $cfgusrdir$log; else echo "extraction of $arch olsrd failed" >> $cfgusrdir$log; fi
 # base64: olsrd-plugins_0.9.0.3-1_mipsel.deb
 echo "
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzMxODQ5OCAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
@@ -19114,7 +19126,8 @@ rhblHZc6nioLdzoLup4WulOKLg9dvo1uTtFNQTfVpt7vFF0ZujJ0lRa67xUd3zPDV8Q5wd/fuqsL
 hfRW56/wGMXc3dRhwoaGhhwP83vneWBwfXTDQHRo42CUzMFodL1JkcF2jTEG8GP+MwNQKtrJQiRC
 hVzO1umW4u+d+Z8YTyfvcsbvcv4HhkxzvZh/2RiebyP6bwzA/3z+AwsssMACCyywwAILLLDAAgss
 sMACCyywe9f+AiOpm9wAAA8ACg==
-" | base64 -d -i > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >> $cfgusrdir$log; else echo "extraction of $arch olsrd-plugins failed" >> $cfgusrdir$log; fi
 fi
 sed -i '/^#base64begin/,/^#base64end$/d' $0
 # !dont edit or remove this comment!
@@ -19124,7 +19137,7 @@ sed -i '/^#base64begin/,/^#base64end$/d' $0
 onlinecheck () {
     ping="ping -c 1 -W 1 ";
     ping6="ping6 -c 1 -W 1 ";
-    $ping $v4iphost > /dev/null
+    $ping $v4iphost 2> /dev/null
     if [[ $? == 0 ]]; then
         # ipv4 ok
         $ping6 $v6iphost > /dev/null
@@ -19158,29 +19171,16 @@ onlinecheck () {
 
 # function to download (if not found in $cfgusrdir) and install olsrd
 installolsrd () {
-    if [ ! -e ${cfgusrdir}olsrd_*_${arch}.deb ] || [ ! -e ${cfgusrdir}olsrd-plugins_*_${arch}.deb ]; then
-        onlinecheck
-        if [[ $? == 0 ]]; then
-            echo -n "no olsrd $arch packages found in $cfgusrdir - need to download olsrd packages ... " >> $cfgusrdir$log
-            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdmirror) ${olsrdmirror} >> $cfgusrdir$log
-            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdplgmirror) ${olsrdplgmirror} >> $cfgusrdir$log
-            if [[ $? == 0 ]]; then
-                echo "done." >> $cfgusrdir$log
-                return 0
-            else
-                echo "failed to download olsrd package." >> $cfgusrdir$log
-                return 1
-            fi
-        else
-            echo "no internet connection available to download olsrd packages!" >> $cfgusrdir$log
-            echo "check internet connection! (is ip/gateway/dns set correctly?)" >> $cfgusrdir$log
-            return 1
-        fi
+    version_latest_ondisk=$(ls /config/user-data/olsrd_*_${arch}.deb | cut -d_ -f2 | sort -r | head -1)
+    if [ -n ${version_latest_ondisk} ]; then
+        ver=${version_latest_ondisk}
+        olsrdpkg="${cfgusrdir}olsrd_${ver}_${arch}.deb"
+        olsrdplgpkg="${cfgusrdir}olsrd-plugins_${ver}_${arch}.deb"
     fi
-    if [ -e ${cfgusrdir}olsrd_*_${arch}.deb ] && [ -e ${cfgusrdir}olsrd-plugins_*_${arch}.deb ]; then
-        dpkg -i ${cfgusrdir}olsrd_*_${arch}.deb >> $cfgusrdir$log
+    if [ -n ${ver} ] && [ -f ${cfgusrdir}olsrd_${ver}_${arch}.deb ] && [ -f ${cfgusrdir}olsrd-plugins_${ver}_${arch}.deb ]; then
+        dpkg -i ${olsrdpkg} >> $cfgusrdir$log
         statusolsrd=$?
-        dpkg -i ${cfgusrdir}olsrd-plugins_*_${arch}.deb >> $cfgusrdir$log
+        dpkg -i ${olsrdplgpkg} >> $cfgusrdir$log
         statusplugins=$?
         if [[ $statusolsrd == 0 ]] && [[ $statusplugins == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >> $cfgusrdir$log
@@ -19190,25 +19190,41 @@ installolsrd () {
             return 1
         fi
     else
-        echo "error: olsrd $arch debian packages not found to install in $cfgusrdir (both olsrd *and* plugins required!)" >> $cfgusrdir$log
-        return 1
+        echo "no olsrd $arch debian packages found in $cfgusrdir (both olsrd *and* olsrd-plugins required!)" >> $cfgusrdir$log
+        onlinecheck
+        if [[ $? == 0 ]]; then
+            echo -n "internet connection availablee - need to download olsrd packages ... " >> $cfgusrdir$log
+            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdmirror) ${olsrdmirror} >> $cfgusrdir$log
+            curl --connect-timeout 1 -o ${cfgusrdir}$(basename $olsrdplgmirror) ${olsrdplgmirror} >> $cfgusrdir$log
+            if [[ $? == 0 ]]; then
+                echo "done downloading packages." >> $cfgusrdir$log
+                return 0
+            else
+                echo "error: failed to download packages." >> $cfgusrdir$log
+                return 1
+            fi
+        else
+            echo "error: no internet connection available to download olsrd packages!" >> $cfgusrdir$log
+            echo "check packages in $cfgusrdir or check internet connection! (is ip/gateway/dns set correctly?)" >> $cfgusrdir$log
+            return 1
+        fi
     fi
 }
 
 setupv4olsrd () {
     if [[ -w $cfgusrdir$(basename $olsrd4default).default ]]; then
-        cp -f $cfgusrdir$(basename $olsrd4default).default $olsrd4default > /dev/null
+        cp -f $cfgusrdir$(basename $olsrd4default).default $olsrd4default 2> /dev/null
     fi
     olsrd4cnfesc=$(echo $olsrd4config | sed -e 's/[\/&]/\\&/g')
     if [[ $(grep DAEMON_OPTS $olsrd4default) == *"-f"* ]]; then
         old4config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd4default | tr -d \")
-        cp $old4config $olsrd4config > /dev/null
+        cp $old4config $olsrd4config 2> /dev/null
         sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd4cnfesc\"/" $olsrd4default
     else
         sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd4cnfesc\"/" $olsrd4default
     fi
     if [[ ! -w $olsrd4config ]]; then
-        cp $olsrdconfig $olsrd4config > /dev/null
+        cp $olsrdconfig $olsrd4config 2> /dev/null
     fi
 }
 # function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
@@ -19216,7 +19232,7 @@ setupv4olsrd () {
 # (olsrd2 is able to run v4 and v6 in one instance)
 setupv6olsrd () {
     if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
-        cp -f $cfgusrdir$(basename $olsrd6default).default $olsrd6default > /dev/null
+        cp -f $cfgusrdir$(basename $olsrd6default).default $olsrd6default 2> /dev/null
         defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
         if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
             update-rc.d olsrd6 defaults >> /dev/null
@@ -19224,21 +19240,21 @@ setupv6olsrd () {
     fi
     olsrd6cnfesc=$(echo $olsrd6config | sed -e 's/[\/&]/\\&/g')
     if [[ ! -w $olsrd6default ]]; then
-        cp $olsrd4default $olsrd6default > /dev/null
+        cp $olsrd4default $olsrd6default 2> /dev/null
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
         sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
         sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
     else
         if [[ $(grep DAEMON_OPTS $olsrd6default) == *"-f"* ]]; then
             old6config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \")
-            cp $old6config $olsrd6config > /dev/null
+            cp $old6config $olsrd6config 2> /dev/null
             sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/" $olsrd6default
         else
             sed -i '/DAEMON_OPTS/'"s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/" $olsrd6default
         fi
     fi
     if [[ ! -w $olsrd6config ]]; then
-        cp $olsrdconfig $olsrd6config > /dev/null
+        cp $olsrdconfig $olsrd6config 2> /dev/null
         sed -i "s/^IpVersion.*4/IpVersion\ 6/" $olsrd6config
         origIFS=$IFS
         IFS=";"
@@ -19252,12 +19268,12 @@ setupv6olsrd () {
         sed -i 's/Ip4Broadcast/#Ip4Broadcast/' $olsrd6config
     fi
     if [[ ! -w $olsrd6init ]]; then
-        cp -f $olsrd4init $olsrd6init
+        cp -f $olsrd4init $olsrd6init 2> /dev/null
         sed -i 's/olsrd/olsrd6/g' $olsrd6init
         #sed -i 's/^DAEMON=.*/DAEMON=\/usr\/sbin\/olsrd/' $olsrd6init
     fi
     if [[ ! -e $olsrd6bin ]]; then
-        cp -f $olsrd4bin $olsrd6bin
+        cp -f $olsrd4bin $olsrd6bin 2> /dev/null
     fi
 }
 
@@ -19271,7 +19287,7 @@ load () {
     # try to install olsrd and show status (with version information if installed)
     #
     olsrdpkgstatus="\"pkgstatus\":\"error: not installed.\""
-    dpkg -l olsrd olsrd-plugins > $cfgusrdir$log
+    dpkg -l olsrd olsrd-plugins >> $cfgusrdir$log 2>> $cfgusrdir$log
     if [[ $? != 0 ]]; then
         echo "olsrd packages not installed! need to install packages." >> $cfgusrdir$log
         installolsrd
@@ -19284,11 +19300,25 @@ load () {
             olsrdpkgstatus="\"pkgstatus\":\"error: not installed, download or install problem. check $cfgusrdir$log\""
         fi
     else
+        echo "olsrd packages already installed! checking for new version on disk..." >> $cfgusrdir$log
+        # check if latest version is installed from packages available in $cfgusrdir
+        version_installed=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
+        version_latest_ondisk=$(ls /config/user-data/olsrd_* | cut -d_ -f2 | sort -r)
+        ## each separate version number must be less than 3 digit wide !
+        function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
+        if [ "$(version "${version_latest_ondisk:0:5}")" -gt "$(version "${version_installed:0:5}")" ]; then
+            echo "new olsrd packages found, trying to install packages." >> $cfgusrdir$log
+            installolsrd
+        else
+            echo "latest available olsrd packages found in $cfgusrdir are already installed." >> $cfgusrdir$log
+        fi
         setupv4olsrd
         setupv6olsrd
-        olsrdver=$(awk '/^ii.*olsrd\ / { print $3 }' $cfgusrdir$log)
-        olsrdplgver=$(awk '/^ii.*olsrd-plugins/ { print $3 }' $cfgusrdir$log)
-        echo "olsrd already installed. nothing to do." >> $cfgusrdir$log
+        #olsrdver=$(awk '/^ii.*olsrd\ / { print $3 }' $cfgusrdir$log)
+        #olsrdplgver=$(awk '/^ii.*olsrd-plugins/ { print $3 }' $cfgusrdir$log)
+        olsrdver=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
+        olsrdplgver=$(dpkg -l olsrd-plugins | awk '/ii/ { print $3 }')
+        echo "olsrd installed and configured. nothing to do." >> $cfgusrdir$log
         olsrdpkgstatus="\"pkgstatus\":\"success: packages olsrd $olsrdver and olsrd-plugins $olsrdplgver installed.\""
     fi
 
@@ -19458,7 +19488,7 @@ apply () {
     if [[ "$olsrdsetupscript" == "on" ]]; then
         if [[ ! -w $olsrdsetupscript ]]; then
             if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
-                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile
+                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile > /dev/null
             else
                 cat >$olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
 #!/bin/bash
@@ -19532,7 +19562,7 @@ ENDSCRIPTCONTENT
         fi
     else
         if [[ -w $olsrdsetupscriptfile ]]; then
-            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile)
+            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) > /dev/null
         fi
         rm -f $olsrdsetupscriptfile
     fi
@@ -19776,6 +19806,8 @@ case "$ACTION" in
         apply
         ;;
 esac
+
+echo "EdgeMAX OLSRd Wizard ended $(date +%H:%M:%S.%N)" >> $cfgusrdir$log
 
 # call arguments verbatim:
 #$@
