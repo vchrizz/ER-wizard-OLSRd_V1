@@ -198,16 +198,6 @@ document.onchange=function(){
         input.style.color = "green";
         enable();
     }
-    var v4intf = document.getElementById('olsrd4intf');
-    if(v4intf.value.match(/^lo/)) {
-        // issue: input of olsrd4mainip is not saved to json file but olsrd4mainip is defined
-        // document.getElementById('olsrd4mainip').innerHTML="<div><span class='text'>MainIP:</span></div><div><span><input name='olsrd4mainip' size='10' /></span></div>";
-    }
-    var v6intf = document.getElementById('olsrd6intf');
-    if(v6intf.value.match(/^lo/)) {
-        // issue: input of olsrd6mainip is not saved to json file but olsrd6mainip is defined
-        // document.getElementById('olsrd6mainip').innerHTML="<div><span class='text'>MainIP:</span></div><div><span><input name='olsrd6mainip' size='10' /></span></div>";
-    }
 }
 document.onsubmit=function(){
     var input = document.getElementById('pkgstatus');
