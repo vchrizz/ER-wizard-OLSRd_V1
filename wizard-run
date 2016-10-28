@@ -19087,7 +19087,7 @@ setupv6olsrd () {
     fi
     olsrd6cnfesc=$(echo $olsrd6config | sed -e 's/[\/&]/\\&/g')
     if [[ ! -w $olsrd6default ]]; then
-        cp $olsrd4default $olsrd6default 2> /dev/null
+        cp -f $olsrd4default $olsrd6default 2> /dev/null
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
         sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
         sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
@@ -19119,9 +19119,7 @@ setupv6olsrd () {
         sed -i 's/olsrd/olsrd6/g' $olsrd6init
         #sed -i 's/^DAEMON=.*/DAEMON=\/usr\/sbin\/olsrd/' $olsrd6init
     fi
-    if [[ ! -e $olsrd6bin ]]; then
-        cp -f $olsrd4bin $olsrd6bin 2> /dev/null
-    fi
+    cp -f $olsrd4bin $olsrd6bin 2> /dev/null
 }
 
 # function called when you click the wizard
@@ -19141,7 +19139,7 @@ load () {
         if [[ $? == 0 ]]; then
             setupv4olsrd
             setupv6olsrd
-            echo "olsrd packages installed. all done." >> $cfgusrdir$log
+            echo "olsrd packages installed and configured. all done." >> $cfgusrdir$log
             olsrdpkgstatus="\"pkgstatus\":\"success: running olsrd installation ... completed.\""
         else
             olsrdpkgstatus="\"pkgstatus\":\"error: not installed, download or install problem. check $cfgusrdir$log\""
@@ -19151,21 +19149,24 @@ load () {
         # check if latest version is installed from packages available in $cfgusrdir
         version_installed=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
         version_latest_ondisk=$(ls /config/user-data/olsrd_* | cut -d_ -f2 | sort -r)
-        ## each separate version number must be less than 3 digit wide !
+        ## each separate version number must be less than 3 digit wide for this function!
         function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
         if [ "$(version "${version_latest_ondisk:0:5}")" -gt "$(version "${version_installed:0:5}")" ]; then
             echo "new olsrd packages found, trying to install packages." >> $cfgusrdir$log
             installolsrd
+            if [[ $? == 0 ]]; then
+                setupv4olsrd
+                setupv6olsrd
+                echo "olsrd packages installed and configured. done." >> $cfgusrdir$log
+            fi
         else
-            echo "latest available olsrd packages found in $cfgusrdir are already installed." >> $cfgusrdir$log
+            echo "latest available olsrd packages are already installed. (found in $cfgusrdir)" >> $cfgusrdir$log
         fi
-        setupv4olsrd
-        setupv6olsrd
         #olsrdver=$(awk '/^ii.*olsrd\ / { print $3 }' $cfgusrdir$log)
         #olsrdplgver=$(awk '/^ii.*olsrd-plugins/ { print $3 }' $cfgusrdir$log)
         olsrdver=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
         olsrdplgver=$(dpkg -l olsrd-plugins | awk '/ii/ { print $3 }')
-        echo "olsrd installed and configured. nothing to do." >> $cfgusrdir$log
+        echo "latest available olsrd installed and configured. all done." >> $cfgusrdir$log
         olsrdpkgstatus="\"pkgstatus\":\"success: packages olsrd $olsrdver and olsrd-plugins $olsrdplgver installed.\""
     fi
 
