@@ -19273,8 +19273,9 @@ load () {
         v6ifaddress=$(echo $v6if | cut -d";" -f2)
         # remove trailing @interfacename if occurred (eg. when defining vlans)
         v6ifinterface=$(echo ${v6ifinterface} | cut -d@ -f1)
-        # skip loopback and physical switch interfaces
-        if [[ "${v6ifinterface}" == "lo" ]] || [[ "${v6ifinterface}" == "switch0" ]]; then
+        # skip loopback and physical switch interfaces and v6 link-locals
+        # issue: skip interfaces with only link-local v6 addresses (olsrd 0.9.0.3 complains about no interfaces found?!)
+        if [[ "${v6ifinterface}" == "lo" ]] || [[ "${v6ifinterface}" == "switch0" ]] || [[ "${v6ifaddress}" == "fe80"* ]]; then
             continue
         fi
         intfstatus=''
