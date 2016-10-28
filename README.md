@@ -15,4 +15,4 @@ OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
     *) 10/2016 fixed wizard-run: added olsrd 0.6.6.2-1 packages in base64 format for offline installation
     *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mipsel architecture
     *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mips architecture
-
+    *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk

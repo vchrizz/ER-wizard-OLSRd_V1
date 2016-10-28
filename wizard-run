@@ -19081,7 +19081,7 @@ setupv6olsrd () {
     if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
         cp -f $cfgusrdir$(basename $olsrd6default).default $olsrd6default 2> /dev/null
         defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+        if [[ ! -f /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
             update-rc.d olsrd6 defaults >> /dev/null
         fi
     fi
@@ -19173,9 +19173,9 @@ load () {
     # get network status of daemon(s) if running
     #
     v4netstatus=$(netstat -4aunp | awk '/olsrd/ { print $4" "$6;exit }')
-    if [ -z $v4netstatus ]; then v4netstatus="not running"; fi
+    if [ -z "$v4netstatus" ]; then v4netstatus="not running"; fi
     v6netstatus=$(netstat -6aunp | awk '/olsrd/ { print $4" "$6;exit }')
-    if [ -z $v6netstatus ]; then v6netstatus="not running"; fi
+    if [ -z "$v6netstatus" ]; then v6netstatus="not running"; fi
     #olsrdstatus="\"olsrdstatus\":[{\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\"}]"
     olsrddaemonstatus="\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\""
 
