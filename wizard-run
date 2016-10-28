@@ -19274,8 +19274,7 @@ load () {
         # remove trailing @interfacename if occurred (eg. when defining vlans)
         v6ifinterface=$(echo ${v6ifinterface} | cut -d@ -f1)
         # skip loopback and physical switch interfaces
-        # issue: skip interfaces with site-local v6 addresses (setting multicast does not work with olsrd 0.6.6.2)
-        if [[ "${v6ifinterface}" == "lo" ]] || [[ "${v6ifinterface}" == "switch0" ]] || [[ "${v6ifaddress}" == "fe80"* ]]; then
+        if [[ "${v6ifinterface}" == "lo" ]] || [[ "${v6ifinterface}" == "switch0" ]]; then
             continue
         fi
         intfstatus=''
