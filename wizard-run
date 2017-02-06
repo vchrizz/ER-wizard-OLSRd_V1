@@ -19,6 +19,7 @@
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mips architecture
 # *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
 # *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
+# *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
 #
 
 ACTION=$1
@@ -109,6 +110,30 @@ fi
 if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
       echo "patch olsrd_setup.sh..." >> $cfgusrdir$log
       sed -i "s/^if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') \]; then/if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') == 0 \]; then/" /config/scripts/post-config.d/olsrd_setup.sh
+fi
+
+# CPO patch previous version config file changes to match current installation
+if [ -w "/etc/default/olsrd" ]; then
+      echo "patch /etc/default/olsrd..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv4.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd4.conf\"/" /etc/default/olsrd
+fi
+if [[ -w $cfgusrdir$(basename $olsrd4default).default ]]; then
+      echo "patch /config/user-data/olsrd.default..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv4.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd4.conf\"/" $cfgusrdir$(basename $olsrd4default).default
+fi
+if [ -w "/etc/default/olsrdv6" ]; then
+      echo "patch /etc/default/olsrdv6..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv6.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd6.conf\"/" /etc/default/olsrdv6
+fi
+if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
+      echo "patch /config/user-data/olsrdv6.default..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv6.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd6.conf\"/" $cfgusrdir$(basename $olsrd6default).default
+fi
+if [ -w "/etc/olsrd/olsrdv4.conf" ]; then
+      rm /etc/olsrd/olsrdv4.conf >> $cfgusrdir$log
+fi
+if [ -w "/etc/olsrd/olsrdv6.conf" ]; then
+      rm /etc/olsrd/olsrdv6.conf >> $cfgusrdir$log
 fi
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
