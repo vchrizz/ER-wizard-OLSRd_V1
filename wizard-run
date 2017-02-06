@@ -11,6 +11,7 @@
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
 # *) wizard.html: wrong position of olsrd logo in mozilla firefox (10px lower than should be)
 # *) wizard-run: onlinecheck: fallback from ipv6 to ipv4 does not work because dns resolver prefers v6 if ipv6 is configured
+# *) old olsrd for ipv6 was installed as "olsrdv6", new version with "olsrd6" --> fix this by firmware-upgrade!
 # updates:
 # *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
 # *) 06/2016 fixed wizard-run: added architecture check for ER (mips) and ER-X (mipsel)
@@ -113,6 +114,7 @@ if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
 fi
 
 # CPO patch previous version config file changes to match current installation
+# open issue: old olsrd for ipv6 was installed as "olsrdv6", new version with "olsrd6" --> fix this by firmware-upgrade!
 if [ -w "/etc/default/olsrd" ]; then
       echo "patch /etc/default/olsrd..." >> $cfgusrdir$log
       sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv4.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd4.conf\"/" /etc/default/olsrd
