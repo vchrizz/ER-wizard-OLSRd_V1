@@ -18,6 +18,7 @@
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mipsel architecture
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mips architecture
 # *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
+# *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
 #
 
 ACTION=$1
@@ -68,6 +69,48 @@ echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
 # here are the required packages for mips and mipsel in base64 format.
 # they will be extracted into $cfgusrdir at first run of this script.
 #
+
+# CPO remove old installer script!
+echo "clean up old install-scripts and package files..." >> $cfgusrdir$log
+if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
+      rm /config/scripts/post-config.d/install_olsrdv4.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/scripts/post-config.d/install_olsrdv6.sh" ]; then
+      rm /config/scripts/post-config.d/install_olsrdv6.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_setup.sh" ]; then
+      rm /config/user-data/olsrd_setup.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/dpkg.log" ]; then
+      rm /config/user-data/dpkg.log >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/dpkg.sh" ]; then
+      rm /config/user-data/dpkg.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd-plugins_0.6.6.2-1_mipsel.deb" ]; then
+      rm /config/user-data/olsrd-plugins_0.6.6.2-1_mipsel.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_0.6.6.2-1_mipsel.deb" ]; then
+      rm /config/user-data/olsrd_0.6.6.2-1_mipsel.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd-plugins_0.6.6.2-1_mips.deb" ]; then
+      rm /config/user-data/olsrd-plugins_0.6.6.2-1_mips.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_0.6.6.2-1_mips.deb" ]; then
+      rm /config/user-data/olsrd_0.6.6.2-1_mips.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/0xFF-BMK-webstatus_1.0.deb" ]; then
+      rm /config/user-data/0xFF-BMK-webstatus_1.0.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/0xFF-BMK-webstatus_1.4.deb" ]; then
+      rm /config/user-data/0xFF-BMK-webstatus_1.4.deb >> $cfgusrdir$log
+fi
+# CPO correct bug in previous version
+if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
+      echo "patch olsrd_setup.sh..." >> $cfgusrdir$log
+      sed -i "s/^if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') \]; then/if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') == 0 \]; then/" /config/scripts/post-config.d/olsrd_setup.sh
+fi
+
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
 if [ $arch == 'mips' ]; then
 # base64: olsrd_0.9.0.3-1_mips.deb
@@ -19369,7 +19412,7 @@ v4dnshost='www.google.com'
 v6iphost='2001:4860:4860::8888'
 v6dnshost='www.google.com'
 # check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
-if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') ]; then
+if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
     arch='mips'
 else
     arch='mipsel'
