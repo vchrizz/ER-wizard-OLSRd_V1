@@ -21,6 +21,7 @@
 # *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
 # *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
 # *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
+# *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)
 #
 
 ACTION=$1
@@ -111,6 +112,23 @@ fi
 if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
       echo "patch olsrd_setup.sh..." >> $cfgusrdir$log
       sed -i "s/^if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') \]; then/if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') == 0 \]; then/" /config/scripts/post-config.d/olsrd_setup.sh
+fi
+
+# CPO take over very-old verions' configfiles to user-data if missing there
+if [ ! -f $cfgusrdir"olsrd.default" ] && [ -f "/etc/default/olsrd" ]; then
+      cp /etc/default/olsrd $cfgusrdir"olsrd.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.default" ] && [ -f "/etc/default/olsrd6" ]; then
+      cp /etc/default/olsrd6 $cfgusrdir"olsrd6.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.default" ] && [ -f "/etc/default/olsrdv6" ]; then
+      cp /etc/default/olsrdv6 $cfgusrdir"olsrd6.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd4.conf" ] && [ -f "/etc/olsrd/olsrdv4.conf" ]; then
+      cp /etc/olsrd/olsrdv4.conf $cfgusrdir"olsrd4.conf" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.conf" ] && [ -f "/etc/olsrd/olsrdv6.conf" ]; then
+      cp /etc/olsrd/olsrdv6.conf $cfgusrdir"olsrd6.conf" >> $cfgusrdir$log
 fi
 
 # CPO patch previous version config file changes to match current installation
