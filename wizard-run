@@ -2,6 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
+# Version [cpo0903c/20170217]
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
@@ -11,6 +12,7 @@
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
 # *) wizard.html: wrong position of olsrd logo in mozilla firefox (10px lower than should be)
 # *) wizard-run: onlinecheck: fallback from ipv6 to ipv4 does not work because dns resolver prefers v6 if ipv6 is configured
+# *) old olsrd for ipv6 was installed as "olsrdv6", new version with "olsrd6" --> fix this by firmware-upgrade!
 # updates:
 # *) 05/2016 fixed wizard-run: enabled vlans are now correctly displayed as enabled
 # *) 06/2016 fixed wizard-run: added architecture check for ER (mips) and ER-X (mipsel)
@@ -18,6 +20,10 @@
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mipsel architecture
 # *) 10/2016 fixed wizard-run: updated olsrd packages to version 0.9.0.3-1 for mips architecture
 # *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
+# *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
+# *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
+# *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)
+# *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
 #
 
 ACTION=$1
@@ -68,6 +74,90 @@ echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
 # here are the required packages for mips and mipsel in base64 format.
 # they will be extracted into $cfgusrdir at first run of this script.
 #
+
+# CPO remove old installer script!
+echo "clean up old install-scripts and package files..." >> $cfgusrdir$log
+if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
+      rm /config/scripts/post-config.d/install_olsrdv4.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/scripts/post-config.d/install_olsrdv6.sh" ]; then
+      rm /config/scripts/post-config.d/install_olsrdv6.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_setup.sh" ]; then
+      rm /config/user-data/olsrd_setup.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/dpkg.log" ]; then
+      rm /config/user-data/dpkg.log >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/dpkg.sh" ]; then
+      rm /config/user-data/dpkg.sh >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd-plugins_0.6.6.2-1_mipsel.deb" ]; then
+      rm /config/user-data/olsrd-plugins_0.6.6.2-1_mipsel.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_0.6.6.2-1_mipsel.deb" ]; then
+      rm /config/user-data/olsrd_0.6.6.2-1_mipsel.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd-plugins_0.6.6.2-1_mips.deb" ]; then
+      rm /config/user-data/olsrd-plugins_0.6.6.2-1_mips.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/olsrd_0.6.6.2-1_mips.deb" ]; then
+      rm /config/user-data/olsrd_0.6.6.2-1_mips.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/0xFF-BMK-webstatus_1.0.deb" ]; then
+      rm /config/user-data/0xFF-BMK-webstatus_1.0.deb >> $cfgusrdir$log
+fi
+if [ -f "/config/user-data/0xFF-BMK-webstatus_1.4.deb" ]; then
+      rm /config/user-data/0xFF-BMK-webstatus_1.4.deb >> $cfgusrdir$log
+fi
+# CPO correct bug in previous version
+if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
+      echo "patch olsrd_setup.sh..." >> $cfgusrdir$log
+      sed -i "s/^if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') \]; then/if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') == 0 \]; then/" /config/scripts/post-config.d/olsrd_setup.sh
+fi
+
+# CPO take over very-old verions' configfiles to user-data if missing there
+if [ ! -f $cfgusrdir"olsrd.default" ] && [ -f "/etc/default/olsrd" ]; then
+      cp /etc/default/olsrd $cfgusrdir"olsrd.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.default" ] && [ -f "/etc/default/olsrd6" ]; then
+      cp /etc/default/olsrd6 $cfgusrdir"olsrd6.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.default" ] && [ -f "/etc/default/olsrdv6" ]; then
+      cp /etc/default/olsrdv6 $cfgusrdir"olsrd6.default" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd4.conf" ] && [ -f "/etc/olsrd/olsrdv4.conf" ]; then
+      cp /etc/olsrd/olsrdv4.conf $cfgusrdir"olsrd4.conf" >> $cfgusrdir$log
+fi
+if [ ! -f $cfgusrdir"olsrd6.conf" ] && [ -f "/etc/olsrd/olsrdv6.conf" ]; then
+      cp /etc/olsrd/olsrdv6.conf $cfgusrdir"olsrd6.conf" >> $cfgusrdir$log
+fi
+
+# CPO patch previous version config file changes to match current installation
+# open issue: old olsrd for ipv6 was installed as "olsrdv6", new version with "olsrd6" --> fix this by firmware-upgrade!
+if [ -w "/etc/default/olsrd" ]; then
+      echo "patch /etc/default/olsrd..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv4.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd4.conf\"/" /etc/default/olsrd
+fi
+if [[ -w $cfgusrdir$(basename $olsrd4default).default ]]; then
+      echo "patch /config/user-data/olsrd.default..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv4.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd4.conf\"/" $cfgusrdir$(basename $olsrd4default).default
+fi
+if [ -w "/etc/default/olsrdv6" ]; then
+      echo "patch /etc/default/olsrdv6..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv6.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd6.conf\"/" /etc/default/olsrdv6
+fi
+if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
+      echo "patch /config/user-data/olsrdv6.default..." >> $cfgusrdir$log
+      sed -i "s/^DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/etc\/olsrd\/olsrdv6.conf\"/DAEMON_OPTS=\"-i \$MESH_IF -d \$DEBUGLEVEL -f \/config\/user-data\/olsrd6.conf\"/" $cfgusrdir$(basename $olsrd6default).default
+fi
+if [ -w "/etc/olsrd/olsrdv4.conf" ]; then
+      rm /etc/olsrd/olsrdv4.conf >> $cfgusrdir$log
+fi
+if [ -w "/etc/olsrd/olsrdv6.conf" ]; then
+      rm /etc/olsrd/olsrdv6.conf >> $cfgusrdir$log
+fi
+
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
 if [ $arch == 'mips' ]; then
 # base64: olsrd_0.9.0.3-1_mips.deb
@@ -19091,6 +19181,13 @@ setupv6olsrd () {
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
         sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
         sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
+        lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
+        linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
+        if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
+            sed -i '/IpVersion /d'          $olsrd6config
+            sed -i '/IP version to use/d'   $olsrd6config
+            sed -i '/DebugLevel/s/.*/&\n\n# IP version to use (4 or 6)\nIpVersion 6\n/' $olsrd6config
+        fi
     else
         if [[ $(grep DAEMON_OPTS $olsrd6default) == *"-f"* ]]; then
             old6config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \")
@@ -19369,7 +19466,7 @@ v4dnshost='www.google.com'
 v6iphost='2001:4860:4860::8888'
 v6dnshost='www.google.com'
 # check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
-if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') ]; then
+if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
     arch='mips'
 else
     arch='mipsel'
@@ -19618,6 +19715,18 @@ ENDSCRIPTCONTENT
     sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
     sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
     sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
+
+    # CPO fix for LQ on olsrd6:
+    # IpVersion 6 must be defined prior to LineQualityMult
+    # check first occurence of each parameter
+    lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
+    linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
+    if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
+        # replace version parameter in order to put it below DebugLevel (should be quite on top)
+        sed -i '/IpVersion /d'          $olsrd6config
+        sed -i '/IP version to use/d'   $olsrd6config
+        sed -i '/DebugLevel/s/.*/&\n\n# IP version to use (4 or 6)\nIpVersion 6\n/' $olsrd6config
+    fi
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
