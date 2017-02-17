@@ -2,6 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
+# Version [cpo0903c/20170217]
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
@@ -22,6 +23,7 @@
 # *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
 # *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
 # *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)
+# *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
 #
 
 ACTION=$1
@@ -19179,6 +19181,13 @@ setupv6olsrd () {
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
         sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
         sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
+        lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
+        linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
+        if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
+            sed -i '/IpVersion /d'          $olsrd6config
+            sed -i '/IP version to use/d'   $olsrd6config
+            sed -i '/DebugLevel/s/.*/&\n\n# IP version to use (4 or 6)\nIpVersion 6\n/' $olsrd6config
+        fi
     else
         if [[ $(grep DAEMON_OPTS $olsrd6default) == *"-f"* ]]; then
             old6config=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \")
@@ -19706,6 +19715,18 @@ ENDSCRIPTCONTENT
     sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
     sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
     sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
+
+    # CPO fix for LQ on olsrd6:
+    # IpVersion 6 must be defined prior to LineQualityMult
+    # check first occurence of each parameter
+    lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
+    linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
+    if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
+        # replace version parameter in order to put it below DebugLevel (should be quite on top)
+        sed -i '/IpVersion /d'          $olsrd6config
+        sed -i '/IP version to use/d'   $olsrd6config
+        sed -i '/DebugLevel/s/.*/&\n\n# IP version to use (4 or 6)\nIpVersion 6\n/' $olsrd6config
+    fi
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
