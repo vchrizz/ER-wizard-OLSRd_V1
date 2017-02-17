@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo0903c/20170217]
+# Version [cpo0903d/20170217]
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
@@ -24,6 +24,7 @@
 # *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
 # *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)
 # *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
+# *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
 #
 
 ACTION=$1
@@ -19743,9 +19744,13 @@ ENDSCRIPTCONTENT
     fi
 
     olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT)
+    olsrdrestart6now=$(jq -M -r '.olsrdrestart6now' $INPUT)
     if [[ "$olsrdrestartnow" == "on" ]]; then
-        # restart daemon(s)
+        # restart daemon v4
         $olsrd4init restart >> $cfgusrdir$log
+    fi
+    if [[ "$olsrdrestart6now" == "on" ]]; then
+        # restart daemon v6
         $olsrd6init restart >> $cfgusrdir$log
     fi
 

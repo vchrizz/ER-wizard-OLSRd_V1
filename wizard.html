@@ -12,7 +12,7 @@ Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
     <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
-    <br>Version [cpo0903c/20170217]</center>
+    <br>Version [cpo0903d/20170217]</center>
 </legend>
 <div style="padding:15px;border: 1px solid lightgray;width:648px">
   <table border="0">
@@ -131,7 +131,9 @@ Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
 </fieldset>
 <div>
     <span>Olsrd can autodetect changes in NIC configurations (IP address changes etc.).<br>This is Enabled by default but can be turned off pr. NIC to save CPU cycles.<br></span>
-    <input id="olsrdrestart" name="olsrdrestartnow" type="checkbox" /><span> Restart OLSR daemon(s) on 'Apply'.</span>
+    <input id="olsrdrestart" name="olsrdrestartnow"  type="checkbox" /><span> Restart OLSR-IPv4 daemon on 'Apply'.</span><br>
+    <input id="olsrdrestart" name="olsrdrestart6now" type="checkbox" /><span> Restart OLSR-IPv6 daemon on 'Apply'.</span><br>
+    <br>
 </div>
 <br><br>
 <script>
