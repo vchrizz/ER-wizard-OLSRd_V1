@@ -19,3 +19,7 @@ OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
     *) 10/2016 fixed wizard-run: added check if latest version is installed from available packages on disk
     *) 02/2017 CPO: fixed olsrd_setup.sh arch check, patch existing installations, remove prev.version install-scripts
     *) 02/2017 CPO: fix migration from old to new version related to old default/config files (mentioned in /etc/default/olsrd)
+    *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)  
+    *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
+    *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
+  
