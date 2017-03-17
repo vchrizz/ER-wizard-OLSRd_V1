@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo0903d/20170217]
+# Version [cpo0903e/20170317]
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
@@ -25,6 +25,7 @@
 # *) 02/2017 CPO: fix migration from very-old to new version related configfiles in /etc/olsrd instead of /config/user-data)
 # *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
 # *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
+# *) 02/2017 CPO: fix setup-script to correctly find OLSRd_V1 wizard after FW update, if other wizards are installed !
 #
 
 ACTION=$1
@@ -157,6 +158,43 @@ if [ -w "/etc/olsrd/olsrdv4.conf" ]; then
 fi
 if [ -w "/etc/olsrd/olsrdv6.conf" ]; then
       rm /etc/olsrd/olsrdv6.conf >> $cfgusrdir$log
+fi
+
+# CPO patch previous version with activated setup script - need to implove wizard detection
+#
+# was:
+#for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
+#    if [[ $(grep 'OLSRd_V1' $i) ]]; then
+#        olsrdv1wizard=$i
+#    else
+#        echo "error: OLSRd_V1 wizard not found!"
+#        exit
+#    fi
+#done
+
+if [ -w $olsrdsetupscriptfile ] &&
+   [ $(head -n 10 $olsrdsetupscriptfile | grep -n "if \[\[ \$(grep 'OLSRd_V1' \$i) \]\]; then" | wc -l) == "1" ] ; then
+     echo "Patching existing olsrd_setup.sh in post-config.d to support multiple wizards" >> $cfgusrdir$log
+     startatline=$(head -n 10 $olsrdsetupscriptfile | grep -n "if \[\[ \$(grep 'OLSRd_V1' \$i) \]\]; then" | awk -F":" {'print $1'})
+     finishatline=$(head -n 20 $olsrdsetupscriptfile | grep -ne '^done' | awk -F":" {'print $1'})
+     totallines=$(cat $olsrdsetupscriptfile | wc -l)
+     head $olsrdsetupscriptfile -n $(($startatline -2)) >/tmp/olsrd_setup_fixed
+     cat >>/tmp/olsrd_setup_fixed <<'ENDSCRIPTCONTENT'
+for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
+    if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
+        olsrdv1wizard=$i
+        break
+    fi
+done
+if [ ! $olsrdv1wizard ]; then
+    echo "error: OLSRd_V1 wizard not found!"
+    exit
+fi
+ENDSCRIPTCONTENT
+     tail $olsrdsetupscriptfile -n $(($totallines - $finishatline)) >>/tmp/olsrd_setup_fixed
+     cp /tmp/olsrd_setup_fixed $olsrdsetupscriptfile >> $cfgusrdir$log
+     rm /tmp/olsrd_setup_fixed >> $cfgusrdir$log
+     chmod 755 $olsrdsetupscriptfile
 fi
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
@@ -19440,13 +19478,15 @@ apply () {
 #!/bin/bash
 olsrdv1wizard=""
 for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
-    if [[ $(grep 'OLSRd_V1' $i) ]]; then
+    if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
         olsrdv1wizard=$i
-    else
-        echo "error: OLSRd_V1 wizard not found!"
-        exit
+        break
     fi
 done
+if [ ! $olsrdv1wizard ]; then
+    echo "error: OLSRd_V1 wizard not found!"
+    exit
+fi
 cfgusrdir="/config/user-data/"
 # olsrd installation logfile
 log="olsrd-install.log"
