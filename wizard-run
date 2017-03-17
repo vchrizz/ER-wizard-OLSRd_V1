@@ -19309,9 +19309,9 @@ load () {
     #
     # get network status of daemon(s) if running
     #
-    v4netstatus=$(netstat -4aunp | awk '/olsrd/ { print $4" "$6;exit }')
+    v4netstatus=$(netstat -4aunp | grep -iv olsrd2 | awk '/olsrd/ { print $4" "$6;exit }')
     if [ -z "$v4netstatus" ]; then v4netstatus="not running"; fi
-    v6netstatus=$(netstat -6aunp | awk '/olsrd/ { print $4" "$6;exit }')
+    v6netstatus=$(netstat -6aunp | grep -iv olsrd2 | awk '/olsrd/ { print $4" "$6;exit }')
     if [ -z "$v6netstatus" ]; then v6netstatus="not running"; fi
     #olsrdstatus="\"olsrdstatus\":[{\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\"}]"
     olsrddaemonstatus="\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\""
