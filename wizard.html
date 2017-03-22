@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
-versioninfo=201703220
+versioninfo=201703221
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 
 -->
@@ -21,7 +21,7 @@ versioninfo=201703220
     <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
     <tr><td style="vertical-align:middle">Update Info:</td><td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="80" disabled /></td></tr>
     <tr><td colspan="2"><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
-    <tr><td colspan="2"><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checken, the wizard will download and install the current version from github. During this process, olsr daemons will update and restart as well - this will interupt current connections for a couple of seconds. You need to refresh the EdgeRouter WebUI afterwards, as the browser session will need a restart.'>Upgrade Wizard on 'Apply'.</span></div></td></tr>
+    <tr><td colspan="2"><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, the wizard will download and install the current version from github. In case hte olsr daemons will be updated with a new version, they will restart as well - this will interupt current connections for a couple of seconds. In this case you will need to refresh the EdgeRouter WebUI afterwards, as the browser session will need a restart.'>Upgrade Wizard on 'Apply'.</span></div></td></tr>
   </table>
 </div>
 <fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
