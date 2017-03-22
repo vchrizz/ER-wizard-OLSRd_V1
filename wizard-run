@@ -2,7 +2,8 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo0903e/20170317]
+# Version [cpo0903f/20170322]
+# ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
@@ -62,6 +63,11 @@ fi
 olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
 olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
+
+#define update sources on github
+gitowner="vchrizz"
+gitrepo="ER-wizard-OLSRd_V1"
+gitbranch="master"
 
 #
 # DO NOT EDIT BELOW HERE !
@@ -19453,6 +19459,38 @@ load () {
     fi
     olsrd6plugins=$olsrd6plugins$olsrd6plgtxtinfo$olsrd6plgjsoninfo$olsrd6plghttpinfo
 
+    ####### wizard version check against github
+    # 
+    olsrdwizard=""
+    for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
+        if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
+            olsrdwizard=$i
+            break
+        fi
+    done
+    if [ ! $olsrdwizard ]; then
+        updatetext="error: OLSRd_V1 wizard.html not found!" >>$log 2>>$log
+    else
+        CURRENTVERSION=$(head -n 8 $olsrdwizard | grep -i versioninfo= | awk -F"=" {'print $2'})
+        if [ $((onlinecheck)) = 0 ]; then
+            GITVERSION=$(curl -sL https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
+            if [ "$GITVERSION" ] && [ "$CURRENTVERSION" ]; then 
+                if [ $(($GITVERSION)) \> $(($CURRENTVERSION)) ]; then 
+                    updatetext="new version available: "$GITVERSION", current: "$CURRENTVERSION >>$log 2>>$log
+                else
+                    updatetext="current version "$CURRENTVERSION" is up-to-date" >>$log 2>>$log
+                fi
+            else
+                updatetext="version info not available. git:"$GITVERSION", current: "$CURRENTVERSION"." >>$log 2>>$log
+            fi
+        else
+            updatetext="version info not available. git:OFFLINE, current: "$CURRENTVERSION"." >>$log 2>>$log
+        fi
+    fi
+    updatestatus='"updatestatus":"'$updatetext'"'
+    # end
+    ####### wizard version check against github
+
     #
     # get all variables together for output
     #
@@ -19460,7 +19498,7 @@ load () {
     #ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6ip6multicastsite$olsrd6ip6multicastglobal$olsrd6hna$olsrd6lqmult\"olsrd6config\":[$olsrd6interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
     ###echo -n "{\"success\":\"1\",\"data\":{ \"olsrdstatus\":[{$olsrdpkgstatus,$olsrddaemonstatus}],$ipv4conf,$ipv6conf },"
-    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$ipv4conf,$ipv6conf },"
+    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus,$ipv4conf,$ipv6conf },"
     #echo "\"definition\":{ \"olsrd4interface\":$ilist, \"ipv4address\":$ipv4list, \"olsrd6interface\":$ilist, \"ipv6address\":$ipv6list }}"
     echo "\"definition\":{ }}"
 }
@@ -19783,6 +19821,45 @@ ENDSCRIPTCONTENT
         fi
     fi
 
+    ####### wizard manual update from github
+    # update wizard from github
+    # load actual sources (ignoring releases)
+    updatefromgithub=$(jq -M -r '.updatefromgithub' $INPUT)
+    if [[ "$updatefromgithub" == "on" ]]; then
+        echo "update from github requested" >>$log 2>>$log
+        olsrdwizard=""
+        for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
+            if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
+                olsrdwizard=$i
+                break
+            fi
+        done
+        if [ ! $olsrdwizard ]; then
+            echo "error: OLSRd_V1 wizard.html not found!" >>$log 2>>$log
+        elif [ $((onlinecheck)) != 0 ]; then
+            echo "currently offline" >>$log 2>>$log
+        else
+            curl -sL -o /tmp/ER-wizard-OLSRd_V1_latest.tar.gz --connect-timeout 2 https://api.github.com/repos/$gitowner/$gitrepo/tarball >>$log 2>>$log
+            tar   -xvzf /tmp/ER-wizard-OLSRd_V1_latest.tar.gz -C /tmp >/tmp/result.txt 2>>$log
+            rm -f       /tmp/ER-wizard-OLSRd_V1_latest.tar.gz >>$log 2>>$log
+            while read LINE; do
+              set $LINE
+              if [ $(basename $LINE) == "wizard-run" ] || [ $(basename $LINE) == "wizard.html" ] || [ $(basename $LINE) == "validator.json" ]; then W=1; else W=2; fi
+              [ -f "/tmp/"$LINE ] && [ $W == "1" ] && cp "/tmp/"$LINE $(dirname $olsrdwizard)"/"$(basename $LINE) >>$log 2>>$log
+            done < /tmp/result.txt
+            rm /tmp/result.txt >>$log 2>>$log
+            rm -Rf /tmp/$gitowner-$gitrepo* >>$log 2>>$log
+            chmod 755 $(dirname $olsrdwizard)"/"wizard-run >>$log 2>>$log
+            # before current WebGui session will break due to olsrd-install/restart, send success to browser
+            echo "{\"success\":\"1\"}"
+            ret="99"
+            $(dirname $olsrdwizard)"/"wizard-run load >>$log 2>>$log
+            echo "EdgeMAX OLSRd_V1 Wizard stopped $(date +%H:%M:%S.%N)" >> $log
+        fi
+    fi
+    # end
+    ####### wizard manual update from github
+
     olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT)
     olsrdrestart6now=$(jq -M -r '.olsrdrestart6now' $INPUT)
     if [[ "$olsrdrestartnow" == "on" ]]; then
@@ -19797,7 +19874,12 @@ ENDSCRIPTCONTENT
     # for debugging purposes
     cp $INPUT /tmp/result.json
 
-    echo '{"success":"1"}'
+    if [ "$ret" == "99" ]; then
+        echo "result already sent, so do nothing here" >/dev/null
+    else
+        echo '{"success":"1"}'
+    fi
+
 }
 
 case "$ACTION" in

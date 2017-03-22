@@ -1,8 +1,9 @@
 <!--
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
+versioninfo=201703220
+^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 
 -->
 <div class="instructions">
@@ -12,13 +13,15 @@ Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
     <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
-    <br>Version [cpo0903e/20170317]</center>
+    <br>Version [cpo0903f/20170322]</center>
 </legend>
 <div style="padding:15px;border: 1px solid lightgray;width:648px">
   <table border="0">
     <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
     <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
+    <tr><td style="vertical-align:middle">Update Info:</td><td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="80" disabled /></td></tr>
     <tr><td><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
+    <tr><td><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checken, the wizard will download and install the current version from github. During this process, olsr daemons will update and restart as well - this will interupt current connections for a couple of seconds. You need to refresh the EdgeRouter WebUI afterwards, as the browser session will need a restart.'>Upgrade Wizard on 'Apply'.</span></div></td></tr>
   </table>
 </div>
 <fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
@@ -201,6 +204,16 @@ document.onchange=function(){
         input.style.color = "green";
         enable();
     }
+    var input = document.getElementById('updatestatus');
+    input.style.color = "black";
+    document.getElementById('updatefromgithub').disabled = true;
+    if (input.value.match(/new version available/)) {
+        document.getElementById('updatefromgithub').disabled = false;
+        input.style.color = "red";
+    } else if (input.value.match(/up-to-date/)) {
+        input.style.color = "green";
+    } 
+    document.getElementById('updatestatus').disabled = true;
 }
 document.onsubmit=function(){
     var input = document.getElementById('pkgstatus');
@@ -211,5 +224,7 @@ document.onsubmit=function(){
     }
     document.getElementById('pkgstatus').disabled = true;
     document.getElementById('daemonstatus').disabled = true;
+    document.getElementById('updatefromgithub').disabled = true;
+    document.getElementById('updatestatus').disabled = true;
 }
 </script>
