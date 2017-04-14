@@ -1,8 +1,8 @@
-#!/bin/bash
+e#!/bin/bash
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo0903f/20170322]
+# Version [cpo0903f/20170414]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19403,7 +19403,7 @@ load () {
     fi
     olsrd6runonboot='"olsrd6runonboot":"",'
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    if [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+    if [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>>/dev/null) ]]; then
         olsrd6runonboot='"olsrd6runonboot":"on",'
     fi
     olsrd6interfaces=''
