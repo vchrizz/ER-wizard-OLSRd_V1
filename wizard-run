@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo0903f/20170414]
+# Version [cpo0903f/20170418]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19491,6 +19491,11 @@ load () {
     # end
     ####### wizard version check against github
 
+    # check for autoupdate
+    if [ -f /config/user-data/autoupdate.dat ] && [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat | wc -l)" == "1" ]; then
+        autoupdatefromgithub=',"autoupdatefromgithub":"on"'
+    fi
+
     #
     # get all variables together for output
     #
@@ -19498,7 +19503,7 @@ load () {
     #ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6ip6multicastsite$olsrd6ip6multicastglobal$olsrd6hna$olsrd6lqmult\"olsrd6config\":[$olsrd6interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
     ###echo -n "{\"success\":\"1\",\"data\":{ \"olsrdstatus\":[{$olsrdpkgstatus,$olsrddaemonstatus}],$ipv4conf,$ipv6conf },"
-    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus,$ipv4conf,$ipv6conf },"
+    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf },"
     #echo "\"definition\":{ \"olsrd4interface\":$ilist, \"ipv4address\":$ipv4list, \"olsrd6interface\":$ilist, \"ipv6address\":$ipv6list }}"
     echo "\"definition\":{ }}"
 }
@@ -19825,15 +19830,15 @@ ENDSCRIPTCONTENT
     # update wizard from github
     # load actual sources (ignoring releases)
     updatefromgithub=$(jq -M -r '.updatefromgithub' $INPUT)
+    olsrdwizard=""
+    for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
+        if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
+            olsrdwizard=$i
+            break
+        fi
+    done
     if [[ "$updatefromgithub" == "on" ]]; then
         echo "update from github requested" >>$log 2>>$log
-        olsrdwizard=""
-        for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
-            if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
-                olsrdwizard=$i
-                break
-            fi
-        done
         if [ ! $olsrdwizard ]; then
             echo "error: OLSRd_V1 wizard.html not found!" >>$log 2>>$log
         elif [ $((onlinecheck)) != 0 ]; then
@@ -19855,6 +19860,75 @@ ENDSCRIPTCONTENT
             ret="99"
             $(dirname $olsrdwizard)"/"wizard-run load >>$log 2>>$log
             echo "EdgeMAX OLSRd_V1 Wizard stopped $(date +%H:%M:%S.%N)" >> $log
+        fi
+    fi
+    autoupdatefromgithub=$(jq -M -r '.autoupdatefromgithub' $INPUT)
+    if [[ "$autoupdatefromgithub" == "on" ]]; then
+        #check for auto-update wizard, install if not there!!
+        wiz=""
+        for i in $(find /config/wizard/feature/ -name wizard.html); do
+            if [[ $(head $i -n 10 | grep "ER-wizard-AutoUpdate") ]]; then
+                wiz=$i
+                break
+            fi
+        done
+        if [ ! $wiz ]; then 
+            #autoupdate-wizard mit scripten fehlt, installieren - offline-install???
+            git2owner="pocki80"
+            git2repo="ER-wizard-AutoUpdate"
+            git2branch="master"
+            wiz="/config/wizard/feature/AutoUpdate/wizard.html"
+            echo "Installing "$(dirname $wiz)"..." >>$log 2>>$log
+            if [ ! -d $(dirname $wiz) ]; then 
+                mkdir $(dirname $wiz) >>$log 2>>$log
+                chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
+                chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
+            fi
+            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$log 2>>$log
+            tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
+            rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
+            while read LINE; do
+                set $LINE
+                if [ $(basename $LINE) == "wizard-run" ] || [ $(basename $LINE) == "wizard.html" ] || [ $(basename $LINE) == "validator.json" ]; then W=1; else W=2; fi
+                if [ -f "/tmp/"$LINE ] && [ $W == "1" ]; then
+                    sudo cp "/tmp/"$LINE $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                    sudo chmod --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                    sudo chown --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                fi
+            done < /tmp/result.txt
+            rm /tmp/result.txt
+            rm -Rf /tmp/$git2owner-$git2repo* >>$log 2>>$log
+            chmod 755 $(dirname $wiz)"/"wizard-run >>$log 2>>$log
+            echo "Installing done, now triggering initial load..." >>$log 2>>$log
+            $(dirname $wiz)"/"wizard-run load  >>$log 2>>$log
+        fi
+        #remove "no" if exists
+        if [ -f /config/user-data/autoupdate.dat ] &&
+           [ "$(grep -i "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
+            linenumber=$(grep -ni "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+        fi
+        if [ ! -f /config/user-data/autoupdate.dat ]; then
+            #create settings file if missing
+            echo 'wizard-olsrd_v1=yes' >/config/user-data/autoupdate.dat 2>>$log
+            echo '' >>/config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+        else
+            #add yes line if missing
+            if [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "0" ]; then
+                echo 'wizard-olsrd_v1=yes' >>/config/user-data/autoupdate.dat 2>>$log
+                echo '' >>/config/user-data/autoupdate.dat 2>>$log
+                sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+            fi
+        fi
+    else
+        #remove yes line if exists
+        if [ -f /config/user-data/autoupdate.dat ] &&
+           [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
+            linenumber=$(grep -ni "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
         fi
     fi
     # end
