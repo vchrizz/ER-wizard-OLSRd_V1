@@ -27,6 +27,7 @@
 # *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
 # *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
 # *) 02/2017 CPO: fix setup-script to correctly find OLSRd_V1 wizard after FW update, if other wizards are installed !
+# *) 05/2017 fixed wizard-run: changed location of ebtables initialization from /etc/rc.local to /config/scripts/pre-config.d/ebtables.sh
 #
 
 ACTION=$1
@@ -85,6 +86,9 @@ echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
 
 # CPO remove old installer script!
 echo "clean up old install-scripts and package files..." >> $cfgusrdir$log
+if [ -f "/config/scripts/pre-config.d/ebtables.sh" ]; then
+      rm /config/scripts/pre-config.d/ebtables.sh >> $cfgusrdir$log
+fi
 if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
       rm /config/scripts/post-config.d/install_olsrdv4.sh >> $cfgusrdir$log
 fi
@@ -19570,14 +19574,17 @@ load
 rm -f func.sh
 # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
 if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-    if [[ $(grep ebtables /etc/rc.local) != *"FORWARD DROP"* ]]; then
-        sed -i 's/^exit 0/#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0/' /etc/rc.local
+    if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+        mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+        echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD DROP
     fi
 else
-    if [[ $(grep ebtables /etc/rc.local) == *"FORWARD DROP"* ]]; then
+    if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
         sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
         sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
+        sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
+        sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD ACCEPT
     fi
 fi
@@ -19814,14 +19821,17 @@ ENDSCRIPTCONTENT
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep ebtables /etc/rc.local) != *"FORWARD DROP"* ]]; then
-            sed -i 's/^exit 0/#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0/' /etc/rc.local
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+            mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+            echo -e "#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0" > /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep ebtables /etc/rc.local) == *"FORWARD DROP"* ]]; then
+        if [[ $(grep ebtables ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
             sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
+            sed -i '/^#olsrdwizard:.*/d' ebtables /config/scripts/pre-config.d/ebtables.sh
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' ebtables /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
         fi
     fi
