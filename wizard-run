@@ -19577,6 +19577,7 @@ if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6
     if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
         mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
         echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+        chmod 755 /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD DROP
     fi
 else
@@ -19824,6 +19825,7 @@ ENDSCRIPTCONTENT
         if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
             mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
             echo -e "#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0" > /config/scripts/pre-config.d/ebtables.sh
+            chmod 755 /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD DROP
         fi
     else
