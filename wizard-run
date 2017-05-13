@@ -19827,11 +19827,11 @@ ENDSCRIPTCONTENT
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep ebtables ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
             sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
-            sed -i '/^#olsrdwizard:.*/d' ebtables /config/scripts/pre-config.d/ebtables.sh
-            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' ebtables /config/scripts/pre-config.d/ebtables.sh
+            sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
         fi
     fi
