@@ -19327,11 +19327,31 @@ load () {
     olsrddaemonstatus="\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\""
 
     #
-    # post-config script
+    # post-config script in case of firmware upgrade
     #
     olsrdsetupscript='"olsrdsetupscript":""'
     if [[ -w $olsrdsetupscriptfile ]]; then
         olsrdsetupscript='"olsrdsetupscript":"on"'
+    fi
+
+    #
+    # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
+    #
+    if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+            mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+            echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+            chmod 755 /config/scripts/pre-config.d/ebtables.sh
+            ebtables -P FORWARD DROP
+        fi
+    else
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
+            sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
+            sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
+            ebtables -P FORWARD ACCEPT
+        fi
     fi
 
     ###############################
@@ -19464,7 +19484,7 @@ load () {
     olsrd6plugins=$olsrd6plugins$olsrd6plgtxtinfo$olsrd6plgjsoninfo$olsrd6plghttpinfo
 
     ####### wizard version check against github
-    # 
+    #
     olsrdwizard=""
     for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
         if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
