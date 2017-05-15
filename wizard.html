@@ -1,211 +1,103 @@
 <!--
 
-EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
-versioninfo=201705131
+EdgeMAX Wizard "OLSRd_V2" created 03/2017 by CPO for FunkFeuer.at
+Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
+versioninfo=201705110
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
-autoupdate=201704180
+autoupdate=201705110
 ^-- set autoupdate the same version identifier to allow autoupdates
 
 -->
 <div class="instructions">
-    <h3>Optimized Link State Routing Protocol</h3>
-    <div>The <a href="http://olsr.org" target="_blank">OLSR.org</a> OLSR Daemon (olsrd) is an implementation of the IETF <a href="http://tools.ietf.org/html/rfc3626" target="_blank">RFC 3626: Optimized Link State Routing Protocol</a>.</div>
-    <div>OLSR is an IP routing protocol optimized for mobile ad hoc networks, which can also be used on other wireless ad hoc networks. As such it allows mesh routing for any network equipment.</div>
+  DNS host names configuration
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
-    <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
-    <br>Version [vchrizz0903g/20170513]</center>
+    <center>EdgeMAX Wizard "OLSRd_V2"<br>created 03/2017 by CPO for FunkFeuer.at<br>
+    Version 20170511/pkg-0.6/oonf-0.13.0</center>
 </legend>
+
 <div style="padding:15px;border: 1px solid lightgray;width:648px">
   <table border="0">
-    <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
-    <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
-    <tr><td style="vertical-align:middle">Update Info:</td><td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="80" disabled /></td></tr>
-    <tr><td colspan="2"><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
-    <tr><td colspan="2"><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, the wizard will download and install the current version from github. During this process, olsr daemons will update and restart as well - this will interupt current connections for a couple of seconds. You need to refresh the EdgeRouter WebUI afterwards, as the browser session will need a restart.'>Upgrade Wizard on 'Apply'.</span></div></td></tr>
-    <tr><td colspan="2"><div><span><input id="autoupdatefromgithub" name="autoupdatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, a daily cronjob will check for a new version on Github and install it automatically, if it is released to autoupdate.'>Upgrade Wizard from GitHub <b>automatically</b></span></div></td></tr>
+    <tr><td style="vertical-align:middle">OLSRd2 Status:</td><td><input style="right:10px" id="olsrd2status" name="olsrd2status" type="text" size="60" disabled /></td></tr>
+    <tr><td style="vertical-align:middle">Update Info:  </td><td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="60" disabled />
+           <input id="updatefromgithub" name="updatefromgithub"  type="checkbox" /><span> Upgrade on 'Apply'!</span><br></td></tr>
   </table>
-</div>
-<fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
-    <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
-    <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
-    <legend>OLSRd IPv4</legend>
-    <div class="addable" data-min="1" data-max="1" data-object="olsrd4config" data-objectify="1">
-        <div><span><input name="olsrd4enabled" type="checkbox" /></span> Enable OLSR daemon</div>
-        <div class="clear"></div><br><div class="clear"></div>
-        <div><span><input name="olsrd4runonboot" type="checkbox" /></span> Run OLSR daemon<br>(on boot, if enabled)</div>
-        <div class="clear"></div><br><div class="clear"></div>
-        <span><b><u>Interfaces:</u></b></span>
-        <div class="addable-template" style="padding-top:0px;">
-            <div class="multi">
-                <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
-                <div>Interface: <input id="olsrd4intf" name="olsrd4interface" size="5" disabled /></div>
-                <div>Address: <input name="ipv4address" size="25" disabled /></div>
-                <div id="olsrd4mainip"></div>
-            </div>
-        </div>
-        <div class="addable-container"></div>
-        <!-- although hidden, this add-button needs to exist! //-->
-        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-        <span><b><u>Settings:</u></b></span>
-        <div class="clear"></div><br><div class="clear"></div>
-        <div><input type="text" name="olsrd4Ip4Broadcast" size="70" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd4Hna" size="70" /></div><div><span class="text" data-infotip='IPv4 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 78.41.118.9 255.255.255.255; 78.41.112.214 255.255.255.255'>Hna4</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd4LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 193.238.156.229 0.5; 78.41.112.123 0.7'>LinkQualityMult (IPv4)</span></div>
-        <div class="clear"></div>
-        <span><b><u>Plugins:</u></b></span>
-        <div class="clear"></div>
-        <div><span><input name="olsrd4plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (0.0.0.0:2006)</span></div>
-        <div><span><input name="olsrd4plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo (0.0.0.0:9090)</span></div>
-        <div><span><input name="olsrd4plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (0.0.0.0:8080)</span></div>
-    </div>
-</fieldset>
-<fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary expanded">
-    <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
-    <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
-    <legend>OLSRd IPv6</legend>
-    <div class="addable" data-min="1" data-max="1" data-object="olsrd6config" data-objectify="1">
-        <div><span><input name="olsrd6enabled" type="checkbox" /></span> Enable OLSR daemon</div>
-        <div class="clear"></div><br><div class="clear"></div>
-        <div><span><input name="olsrd6runonboot" type="checkbox" /></span> Run OLSR daemon<br>(on boot, if enabled)</div>
-        <div class="clear"></div><br><div class="clear"></div>
-        <span><b><u>Interfaces:</u></b></span>
-        <div class="addable-template" style="padding-top:0px;">
-            <div class="multi">
-                <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
-                <div>Interface: <input id="olsrd6intf" name="olsrd6interface" size="5" disabled /></div>
-                <div>Address: <input name="ipv6address" size="25" disabled /></div>
-                <div id="olsrd6mainip"></div>
-            </div>
-        </div>
-        <div class="addable-container"></div>
-        <!-- although hidden, this add-button needs to exist! //-->
-        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-        <span><b><u>Settings:</u></b></span>
-        <div class="clear"></div><br><div class="clear"></div>
-        <!-- issue: setting ip6 multicast does not work with olsrd 0.6.6.2 - daemon hangs while starting
-        <div><input type="text" name="olsrd6Ip6MulticastSite" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using site-local addresses. If not defined, ff05::15 is used'>Ip6MulticastSite</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd6Ip6MulticastGlobal" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using global addresses. If not defined, ff0e::1 is used'>Ip6MulticastGlobal</span></div>
-        <div class="clear"></div>
-        -->
-        <div><input type="text" name="olsrd6Hna" size="70" /></div><div><span class="text" data-infotip='IPv6 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 2a02:60:100:a907::2/64; 2a02:60:100:a905::254/64'>Hna6</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd6LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 2a02:60:100:c00::7 0.3; 2a02:60:100:c00::8 0.3'>LinkQualityMult (IPv6)</span></div>
-        <div class="clear"></div>
-        <span><b><u>Plugins:</u></b></span>
-        <div class="clear"></div>
-        <!-- <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo</span></div> -->
-        <div><span><input name="olsrd6plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo ([::]:2007)</span></div>
-        <div><span><input name="olsrd6plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo ([::]:9091)</span></div>
-        <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo ([::]:8081)</span></div>
-    </div>
-</fieldset>
-<fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary expanded">
-    <div title="Optimized Link State Routing Protocol" style="position:absolute; top:10px; right:0px; z-index:-1; padding:10px;">
-        <img src="http://olsrinterop.free.fr/pictures/logo1.png" width="365px" height="210px" style="opacity:0.1; filter:alpha(opacity=1);">
-    </div>
-    <legend>Common OLSR Settings</legend>
-    <span><b><u>Emission intervals:</u></b> (for both IPv4 &amp; IPv6 daemons)<br>If not defined, RFC proposed values will be used in most cases.</span><br>
-    <div class="addable" data-min="1" data-max="1" data-object="olsrdsettings" data-objectify="1">
-        <div class="addable-template">
-            <div class="multi">
-                <div><input type="text" name="HelloInterval" value="5.0" /></div><div><span class="text" data-infotip='Hello interval in seconds(float)'>HelloInterval</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="HelloValidityTime" value="125.0" /></div><div><span class="text" data-infotip='HELLO validity time'>HelloValidityTime</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="TcInterval" value="2.0" /></div><div><span class="text" data-infotip='TC interval in seconds(float)'>TcInterval</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="TcValidityTime" value="500.0" /></div><div><span class="text" data-infotip='TC validity time'>TcValidityTime</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="MidInterval" value="25.0" /></div><div><span class="text" data-infotip='MID interval in seconds(float)'>MidInterval</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="MidValidityTime" value="500.0" /></div><div><span class="text" data-infotip='MID validity time'>MidValidityTime</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="HnaInterval" value="25.0" /></div><div><span class="text" data-infotip='HNA interval in seconds(float)'>HnaInterval</span></div>
-                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
-                <div><input type="text" name="HnaValidityTime" value="500.0" /></div><div><span class="text" data-infotip='HNA validity time'>HnaValidityTime</span></div>
-            </div>
-        </div>
-        <div class="addable-container"></div>
-        <!-- although hidden, this add-button needs to exist //-->
-        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-    </div>
-</fieldset>
-<div>
-    <span>Olsrd can autodetect changes in NIC configurations (IP address changes etc.).<br>This is Enabled by default but can be turned off pr. NIC to save CPU cycles.<br></span>
-    <input id="olsrdrestart" name="olsrdrestartnow"  type="checkbox" /><span> Restart OLSR-IPv4 daemon on 'Apply'.</span><br>
-    <input id="olsrdrestart" name="olsrdrestart6now" type="checkbox" /><span> Restart OLSR-IPv6 daemon on 'Apply'.</span><br>
-    <br>
+  <br>
+  <input id="autoupdatefromgithub" name="autoupdatefromgithub" type="checkbox" /><span> Upgrade Wizard from GitHub <b>automatically</b></span><br>
+  <input id="autostart" name="autostart"  type="checkbox" /><span> Enable OLSRd2 daemon and Start-on-Boot </span><br>
+  <input id="olsrdrestart" name="olsrdrestartnow"  type="checkbox" /><span> Restart OLSRv2 daemon on 'Apply'</span><br>
+  <input id="reset2defaults" name="reset2defaults"  type="checkbox" /><span> Reset olsrd2.conf to default-settings on 'Apply'</span><br>
 </div>
 <br><br>
+
+<fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary expanded">
+    <legend>OLSRd2 IPv6</legend>
+    <table border="0">
+      <tr><td style="vertical-align:middle">Firewall rules exist</td> <td><input id="firewallcreated" name="firewallcreated"  type="checkbox" disabled /> Firewall-Rules have been created<td></tr>
+      <tr><td style="vertical-align:middle">Initialize Firewall rules</td> <td><input id="initfirewall" name="initfirewall"  type="checkbox" /> Initialise or update firewall rules<td></tr>
+      <tr><td style="vertical-align:middle">Enable v6 Firewall </td> <td><input id="routerfirewall" name="routerfirewall"  type="checkbox" /> Block unwanted IPv6 traffic to router<td></tr>
+      <tr><td style="vertical-align:middle">Assign Google DNSv6 </td> <td><input id="googlednson" name="googlednson"  type="checkbox" /> User IPv6-DNS servers from Google as name-servers<td></tr>
+      <tr><td style="vertical-align:middle">lo-Adresse EUI64 </td> <td><input style="right:10px" id="eui4address" name="eui4address" type="text" size="40" disabled />
+               <input id="eui4addron" name="eui4addron"  type="checkbox" /><span> Assigned </span><td></tr>
+      <tr><td style="vertical-align:middle">lo-Adresse NodeID<br>change here </td><td><input style="right:10px" id="nodeidaddress" name="nodeidaddress" type="text" size="40" />
+               <input style="right:10px" id="currentnodeidaddress" name="currentnodeidaddress" type="hidden" size="40" />
+               <input id="nodeidaddron" name="nodeidaddron"  type="checkbox" /><span> Assigned </span><td></tr>
+      <tr><td style="vertical-align:middle">Node/Router/NIC-ID </td><td><input style="right:10px" id="nodeiddec" name="nodeiddec" type="text" size="10" disabled /><input style="right:10px" id="routeriddec" name="routeriddec" type="text" size="4" disabled /><input style="right:10px" id="niciddec" name="niciddec" type="text" size="2" disabled /></td></tr>
+      <tr><td style="vertical-align:middle">...hex...          </td><td><input style="right:10px" id="nodeidhex" name="nodeidhex" type="text" size="10" disabled /><input style="right:10px" id="routeridhex" name="routeridhex" type="text" size="4" disabled /><input style="right:10px" id="nicidhex" name="nicidhex" type="text" size="2" disabled /></td></tr>
+      <tr><td style="vertical-align:middle">4in6 IPv4 </td><td><input style="right:10px" id="tunnel4in6addrv4" name="tunnel4in6addrv4" type="text" size="20" /></td></tr>
+    </table>
+</fieldset>
+
+<fieldset id="ipv6ifs" name="ipv6ifs" class="primary expanded">
+    <legend>Interfaces</legend>
+    <div class="addable" data-min="1" data-max="1" data-object="olsr6config" data-objectify="1">
+        <table><tr>
+        <td width=122 align=right>MESH,FW</td>
+        <td width=230 align=center>IPv6-Address</td>
+        <td width=30>LAN</td>
+        <td width=160 align=center>Prefix</td>
+        <td>Firewall</td>
+        </tr></table>
+        <div class="addable-template" style="padding-top:0px;">
+            <div class="multi">
+                <div><input id="olsrinterface" name="olsrv6intf" size="6" disabled /></div>
+                <div><input name="enabled" type="checkbox" onclick="validate()" disabled /></div>
+                <div><input name="routerfw" type="checkbox" onclick="validate()" disabled /></div>
+                <div><input name="ipv6address" size="33" disabled /></div>
+                <div><input name="lanon" type="checkbox" onclick="validate()" /></div>
+                <div><input name="prefix" size="22" disabled /></div>
+                <div><input name="origprefix" type="hidden" size="20" disabled /></div>
+                <div><input name="firewallon" type="checkbox" onclick="validate()" /></div>
+            </div>
+        </div>
+        <div class="addable-container"></div>
+        <!-- although hidden, this add-button needs to exist! //-->
+        <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
+    </div>
+</fieldset>
+
+<fieldset id="ipv6announce" name="ipv6announce" class="primary expanded">
+<legend>Additional OLSRv2 Announcements</legend>
+<div class="addable" data-min="0" data-max="99" data-object="ipv6announce" data-objectify="1">
+<div class="addable-template" style="padding-top:0px;">
+<div class="multi">
+<span class="text">Prefix/Address:</span>
+<span><input name="prefix" size="35" /></span>
+<span><button type="button" class="addable-remove">Remove</button></span>
+</div>
+</div>
+<div class="addable-container"></div>
+<button type="button" class="addable-add">Add</button>
+</div>
+</fieldset>
 <script>
-function disable() {
-    var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
-    for(var i=0; i<v4nodes.length; i++)
-    {
-        v4nodes[i].disabled = true;
-    }
-    var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
-    for(var i=0; i<v6nodes.length; i++)
-    {
-        v6nodes[i].disabled = true;
-    }
-    var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
-    for(var i=0; i<cfgnodes.length; i++)
-    {
-        cfgnodes[i].disabled = true;
-    }
-    var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
-    for(var i=0; i<restartnodes.length; i++)
-    {
-        restartnodes[i].disabled = true;
-    }
-}
-function enable() {
-    var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
-    for(var i=0; i<v4nodes.length; i++)
-    {
-        if ((v4nodes[i].name == "olsrd4interface") || (v4nodes[i].name == "ipv4address")) {
-            v4nodes[i].disabled = true;
-        } else {
-            v4nodes[i].disabled = false;
-        }
-    }
-    var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
-    for(var i=0; i<v6nodes.length; i++)
-    {
-        if ((v6nodes[i].name == "olsrd6interface") || (v6nodes[i].name == "ipv6address")) {
-            v6nodes[i].disabled = true;
-        } else {
-            v6nodes[i].disabled = false;
-        }
-    }
-    var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
-    for(var i=0; i<cfgnodes.length; i++)
-    {
-        cfgnodes[i].disabled = false;
-    }
-    var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
-    for(var i=0; i<restartnodes.length; i++)
-    {
-        restartnodes[i].disabled = false;
-    }
-}
-function validate() {
-}
-document.onchange=function(){
-    document.getElementById('daemonstatus').disabled = true;
-    var input = document.getElementById('pkgstatus');
-    if(input.value.match(/^error/)) {
+function colors() {
+    var input = document.getElementById('olsrd2status');
+    input.style.color = "black";
+    if (input.value.match(/error/)) {
         input.style.color = "red";
-        disable();
-    } else if (input.value.match(/^success/)) {
+    } else if (input.value.match(/success/)) {
         input.style.color = "green";
-        enable();
     }
     var input = document.getElementById('updatestatus');
     input.style.color = "black";
@@ -215,19 +107,43 @@ document.onchange=function(){
         input.style.color = "red";
     } else if (input.value.match(/up-to-date/)) {
         input.style.color = "green";
+        // allow same version re-install for development
+        document.getElementById('updatefromgithub').disabled = false;
     } 
     document.getElementById('updatestatus').disabled = true;
+    document.getElementById('olsrd2status').disabled = true;
+    document.getElementById('eui4address').disabled = true;
+    document.getElementById('nodeiddec').disabled = true;
+    document.getElementById('nodeidhex').disabled = true;
+    document.getElementById('routeriddec').disabled = true;
+    document.getElementById('routeridhex').disabled = true;
+    document.getElementById('niciddec').disabled = true;
+    document.getElementById('nicidhex').disabled = true;
+    document.getElementById('firewallcreated').disabled = true;
+    document.getElementById('tunnel4in6addrv4').disabled = true;
+    var v6nodes = document.getElementById("ipv6ifs").getElementsByTagName('*');
+    for(var i=0; i<v6nodes.length; i++) {
+        if (v6nodes[i].name == "olsrv6intf") {
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "ipv6address") {
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "prefix") {
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "enabled") {
+            // not implemented to wizard-run already
+            v6nodes[i].disabled = true;
+        } else if (v6nodes[i].name == "routerfw") {
+            // not implemented to wizard-run already
+            v6nodes[i].disabled = true;
+        }
+    }
+}
+function validate() {
+}
+document.onchange=function(){
+    colors();
 }
 document.onsubmit=function(){
-    var input = document.getElementById('pkgstatus');
-    if(input.value.match(/^error/)) {
-        disable();
-    } else if (input.value.match(/^success/)) {
-        enable();
-    }
-    document.getElementById('pkgstatus').disabled = true;
-    document.getElementById('daemonstatus').disabled = true;
-    document.getElementById('updatefromgithub').disabled = true;
-    document.getElementById('updatestatus').disabled = true;
+    colors();
 }
 </script>
