@@ -2,10 +2,9 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [vchrizz0903g/201705150]
+# Version [vchrizz0903g/201705153]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
-# Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
 # Works on all EdgeRouter and EdgePoint Devices (system version 1.7.0+)
@@ -85,25 +84,11 @@ echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
 # they will be extracted into $cfgusrdir at first run of this script.
 #
 
-# migrate ebtables command to correct location
-if [ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /etc/rc.local | wc -l) == 2 ]; then
-    # old setup using rc.local detected, migrate to pre-config.d
-    sed -i '/^#olsrdwizard:.*/d' /etc/rc.local >>$cfgusrdir$log 2>>$cfgusrdir$log
-    sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local >>$cfgusrdir$log 2>>$cfgusrdir$log
-    if [ ! -d /config/scripts/pre-config.d ]; then
-        # create missing directory
-        mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-        chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-        chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-    fi
-    if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-        echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-        chmod 755 /config/scripts/pre-config.d/ebtables.sh
-    fi
-fi
-
 # CPO remove old installer script!
 echo "clean up old install-scripts and package files..." >> $cfgusrdir$log
+if [ -f "/config/scripts/pre-config.d/ebtables.sh" ]; then
+      rm /config/scripts/pre-config.d/ebtables.sh >> $cfgusrdir$log
+fi
 if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
       rm /config/scripts/post-config.d/install_olsrdv4.sh >> $cfgusrdir$log
 fi
@@ -19353,28 +19338,16 @@ load () {
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     #
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-            if [ ! -d /config/scripts/pre-config.d ]; then
-                # create missing directory
-                mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            fi
-            if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-                #create file
-                echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-                chmod 755 /config/scripts/pre-config.d/ebtables.sh
-            else
-                #add lines to file on top
-                linenumber=2
-                sed -i $linenumber'i\
-#olsrdwizard: dont forward ethernet frames between bridge ports\
-ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$log 2>>$cfgusrdir$log
-            fi
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+            mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+            echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+            chmod 755 /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
+            sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
             sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
@@ -19568,7 +19541,7 @@ apply () {
             if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
                 cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile > /dev/null
             else
-                cat >$olsrdsetupscriptfile <'ENDSCRIPTCONTENT'
+                cat >$olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
 #!/bin/bash
 olsrdv1wizard=""
 for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
@@ -19621,28 +19594,16 @@ load
 rm -f func.sh
 # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
 if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-    if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-        if [ ! -d /config/scripts/pre-config.d ]; then
-            # create missing directory
-            mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-        fi
-        if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-            #create file
-            echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-            chmod 755 /config/scripts/pre-config.d/ebtables.sh
-        else
-            #add lines to file on top
-            linenumber=2
-            sed -i $linenumber'i\
-#olsrdwizard: dont forward ethernet frames between bridge ports\
-ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$log 2>>$cfgusrdir$log
-        fi
+    if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+        mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+        echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+        chmod 755 /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD DROP
     fi
 else
-    if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
+    if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
+        sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+        sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
         sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
         sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD ACCEPT
@@ -19881,28 +19842,16 @@ ENDSCRIPTCONTENT
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-            if [ ! -d /config/scripts/pre-config.d ]; then
-                # create missing directory
-                mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            fi
-            if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-                #create file
-                echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-                chmod 755 /config/scripts/pre-config.d/ebtables.sh
-            else
-                #add lines to file on top
-                linenumber=2
-                sed -i $linenumber'i\
-#olsrdwizard: dont forward ethernet frames between bridge ports\
-ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$log 2>>$cfgusrdir$log
-            fi
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) != *"FORWARD DROP"* ]]; then
+            mkdir /config/scripts/pre-config.d && chown 0:102 /config/scripts/pre-config.d && chmod g+w /config/scripts/pre-config.d
+            echo -e "#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0" > /config/scripts/pre-config.d/ebtables.sh
+            chmod 755 /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
+        if [[ $(grep ebtables /config/scripts/pre-config.d/ebtables.sh) == *"FORWARD DROP"* ]]; then
+            sed -i '/^#olsrdwizard:.*/d' /etc/rc.local
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /etc/rc.local
             sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
@@ -19961,48 +19910,48 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
             git2repo="ER-wizard-AutoUpdate"
             git2branch="master"
             wiz="/config/wizard/feature/AutoUpdate/wizard.html"
-            echo "Installing "$(dirname $wiz)"..." >>$cfgusrdir$log 2>>$cfgusrdir$log
+            echo "Installing "$(dirname $wiz)"..." >>$log 2>>$log
             if [ ! -d $(dirname $wiz) ]; then 
-                mkdir $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
-                chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                mkdir $(dirname $wiz) >>$log 2>>$log
+                chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
+                chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
             fi
-            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$cfgusrdir$log 2>>$cfgusrdir$log
-            tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$cfgusrdir$log
-            rm -f       /tmp/ER-wizard.tar.gz >>$cfgusrdir$log 2>>$cfgusrdir$log
+            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$log 2>>$log
+            tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
+            rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
             while read LINE; do
                 set $LINE
                 if [ $(basename $LINE) == "wizard-run" ] || [ $(basename $LINE) == "wizard.html" ] || [ $(basename $LINE) == "validator.json" ]; then W=1; else W=2; fi
                 if [ -f "/tmp/"$LINE ] && [ $W == "1" ]; then
-                    sudo cp "/tmp/"$LINE $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
-                    sudo chmod --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
-                    sudo chown --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                    sudo cp "/tmp/"$LINE $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                    sudo chmod --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                    sudo chown --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
                 fi
             done < /tmp/result.txt
             rm /tmp/result.txt
-            rm -Rf /tmp/$git2owner-$git2repo* >>$cfgusrdir$log 2>>$cfgusrdir$log
-            chmod 755 $(dirname $wiz)"/"wizard-run >>$cfgusrdir$log 2>>$cfgusrdir$log
-            echo "Installing done, now triggering initial load..." >>$cfgusrdir$log 2>>$cfgusrdir$log
-            $(dirname $wiz)"/"wizard-run load  >>$cfgusrdir$log 2>>$cfgusrdir$log
+            rm -Rf /tmp/$git2owner-$git2repo* >>$log 2>>$log
+            chmod 755 $(dirname $wiz)"/"wizard-run >>$log 2>>$log
+            echo "Installing done, now triggering initial load..." >>$log 2>>$log
+            $(dirname $wiz)"/"wizard-run load  >>$log 2>>$log
         fi
         #remove "no" if exists
         if [ -f /config/user-data/autoupdate.dat ] &&
            [ "$(grep -i "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
             linenumber=$(grep -ni "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
-            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
         fi
         if [ ! -f /config/user-data/autoupdate.dat ]; then
             #create settings file if missing
-            echo 'wizard-olsrd_v1=yes' >/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-            echo '' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            echo 'wizard-olsrd_v1=yes' >/config/user-data/autoupdate.dat 2>>$log
+            echo '' >>/config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
         else
             #add yes line if missing
             if [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "0" ]; then
-                echo 'wizard-olsrd_v1=yes' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-                echo '' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-                sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+                echo 'wizard-olsrd_v1=yes' >>/config/user-data/autoupdate.dat 2>>$log
+                echo '' >>/config/user-data/autoupdate.dat 2>>$log
+                sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
             fi
         fi
     else
@@ -20010,8 +19959,8 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
         if [ -f /config/user-data/autoupdate.dat ] &&
            [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
             linenumber=$(grep -ni "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
-            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
         fi
     fi
     # end
