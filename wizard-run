@@ -19961,48 +19961,48 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
             git2repo="ER-wizard-AutoUpdate"
             git2branch="master"
             wiz="/config/wizard/feature/AutoUpdate/wizard.html"
-            echo "Installing "$(dirname $wiz)"..." >>$log 2>>$log
+            echo "Installing "$(dirname $wiz)"..." >>$cfgusrdir$log 2>>$cfgusrdir$log
             if [ ! -d $(dirname $wiz) ]; then 
-                mkdir $(dirname $wiz) >>$log 2>>$log
-                chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
-                chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
+                mkdir $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$cfgusrdir$log 2>>$cfgusrdir$log
             fi
-            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$log 2>>$log
-            tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
-            rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
+            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$cfgusrdir$log 2>>$cfgusrdir$log
+            tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$cfgusrdir$log
+            rm -f       /tmp/ER-wizard.tar.gz >>$cfgusrdir$log 2>>$cfgusrdir$log
             while read LINE; do
                 set $LINE
                 if [ $(basename $LINE) == "wizard-run" ] || [ $(basename $LINE) == "wizard.html" ] || [ $(basename $LINE) == "validator.json" ]; then W=1; else W=2; fi
                 if [ -f "/tmp/"$LINE ] && [ $W == "1" ]; then
-                    sudo cp "/tmp/"$LINE $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
-                    sudo chmod --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
-                    sudo chown --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$log 2>>$log
+                    sudo cp "/tmp/"$LINE $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                    sudo chmod --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
+                    sudo chown --reference=$(dirname $olsrdwizard)"/"$(basename $LINE) $(dirname $wiz)"/"$(basename $LINE) >>$cfgusrdir$log 2>>$cfgusrdir$log
                 fi
             done < /tmp/result.txt
             rm /tmp/result.txt
-            rm -Rf /tmp/$git2owner-$git2repo* >>$log 2>>$log
-            chmod 755 $(dirname $wiz)"/"wizard-run >>$log 2>>$log
-            echo "Installing done, now triggering initial load..." >>$log 2>>$log
-            $(dirname $wiz)"/"wizard-run load  >>$log 2>>$log
+            rm -Rf /tmp/$git2owner-$git2repo* >>$cfgusrdir$log 2>>$cfgusrdir$log
+            chmod 755 $(dirname $wiz)"/"wizard-run >>$cfgusrdir$log 2>>$cfgusrdir$log
+            echo "Installing done, now triggering initial load..." >>$cfgusrdir$log 2>>$cfgusrdir$log
+            $(dirname $wiz)"/"wizard-run load  >>$cfgusrdir$log 2>>$cfgusrdir$log
         fi
         #remove "no" if exists
         if [ -f /config/user-data/autoupdate.dat ] &&
            [ "$(grep -i "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
             linenumber=$(grep -ni "wizard-olsrd_v1=no" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
-            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
         fi
         if [ ! -f /config/user-data/autoupdate.dat ]; then
             #create settings file if missing
-            echo 'wizard-olsrd_v1=yes' >/config/user-data/autoupdate.dat 2>>$log
-            echo '' >>/config/user-data/autoupdate.dat 2>>$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+            echo 'wizard-olsrd_v1=yes' >/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            echo '' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
         else
             #add yes line if missing
             if [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "0" ]; then
-                echo 'wizard-olsrd_v1=yes' >>/config/user-data/autoupdate.dat 2>>$log
-                echo '' >>/config/user-data/autoupdate.dat 2>>$log
-                sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+                echo 'wizard-olsrd_v1=yes' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+                echo '' >>/config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+                sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
             fi
         fi
     else
@@ -20010,8 +20010,8 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
         if [ -f /config/user-data/autoupdate.dat ] &&
            [ "$(grep -i "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat |wc -l)" == "1" ]; then
             linenumber=$(grep -ni "wizard-olsrd_v1=yes" /config/user-data/autoupdate.dat | awk -F: {'print $1'})
-            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$log
-            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$log
+            sed -i $linenumber'd' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
+            sed -i '/^$/d' /config/user-data/autoupdate.dat 2>>$cfgusrdir$log
         fi
     fi
     # end
