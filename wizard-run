@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [vchrizz0903g/201705160]
+# Version [vchrizz0903g/201705161]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -77,6 +77,99 @@ gitbranch="master"
 
 echo "EdgeMAX OLSRd Wizard started $(date +%H:%M:%S.%N)" > $cfgusrdir$log
 
+#function to write setup-script
+writesetupscript () {
+#               cat >$olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
+                cat >/tmp/olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
+#!/bin/bash
+olsrdv1wizard=""
+for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
+    if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
+        olsrdv1wizard=$i
+        break
+    fi
+done
+if [ ! $olsrdv1wizard ]; then
+    echo "error: OLSRd_V1 wizard not found!"
+    exit
+fi
+cfgusrdir="/config/user-data/"
+# olsrd installation logfile
+log="olsrd-install.log"
+# default olsrd configuration files
+olsrdconfig='/etc/olsrd/olsrd.conf'
+olsrd4init='/etc/init.d/olsrd'
+olsrd4default='/etc/default/olsrd'
+olsrd4bin='/usr/sbin/olsrd'
+olsrd6init='/etc/init.d/olsrd6'
+olsrd6default='/etc/default/olsrd6'
+olsrd6bin='/usr/sbin/olsrd6'
+# user-defined olsrd configuration files
+olsrd4config="${cfgusrdir}olsrd4.conf"
+olsrd6config="${cfgusrdir}olsrd6.conf"
+# hosts to check for online status
+v4iphost='8.8.8.8'
+v4dnshost='www.google.com'
+v6iphost='2001:4860:4860::8888'
+v6dnshost='www.google.com'
+# check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
+if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
+    arch='mips'
+else
+    arch='mipsel'
+fi
+# both packages, olsrd *and* olsrd-plugins are required and must be specified!
+# german debian mirror
+olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
+olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
+echo '#!/bin/bash' > func.sh
+sed -n "/^onlinecheck ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^load ()/,/^}/p" $olsrdv1wizard >> func.sh
+source func.sh
+load
+rm -f func.sh
+# if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
+if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
+    if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
+
+        if [ ! -d /config/scripts/pre-config.d ]; then
+            # create missing directory
+            mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
+            chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
+            chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
+        fi
+        if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
+            #create file
+            echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+            chmod 755 /config/scripts/pre-config.d/ebtables.sh
+        else
+            #add lines to file on top
+            linenumber=2
+            sed -i $linenumber'i\
+#olsrdwizard: dont forward ethernet frames between bridge ports\
+ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$log 2>>$cfgusrdir$log
+        fi
+        ebtables -P FORWARD DROP
+    fi
+else
+    if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
+
+
+        sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
+        sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
+        ebtables -P FORWARD ACCEPT
+    fi
+fi
+# restart daemon(s)
+$olsrd4init restart >> $cfgusrdir$log
+$olsrd6init restart >> $cfgusrdir$log
+exit 0
+ENDSCRIPTCONTENT
+}
+
 #base64begin: olsrd packages for offline use
 # !dont edit or remove this comment!
 # other files than wizard-run/wizard.html/validator.json are ignored when uploading wizards to the router.
@@ -102,11 +195,22 @@ if [ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /etc/rc.local | wc
     fi
 fi
 
+# rewrite setup script file to be up-to-date
+writesetupscript
+if [ -f $olsrdsetupscriptfile ]; then
+    #enabled
+    cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile
+    chmod +x $olsrdsetupscriptfile
+    rm /tmp/olsrdsetupscriptfile
+else
+    #disabled, save to user-data
+    cp -f /tmp/olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null
+    chmod +x $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null
+    rm /tmp/olsrdsetupscriptfile
+fi
+
 # CPO remove old installer script!
 echo "clean up old install-scripts and package files..." >> $cfgusrdir$log
-
-
-
 if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
       rm /config/scripts/post-config.d/install_olsrdv4.sh >> $cfgusrdir$log
 fi
@@ -140,12 +244,6 @@ fi
 if [ -f "/config/user-data/0xFF-BMK-webstatus_1.4.deb" ]; then
       rm /config/user-data/0xFF-BMK-webstatus_1.4.deb >> $cfgusrdir$log
 fi
-# CPO correct bug in previous version
-if [ -f "/config/scripts/post-config.d/olsrd_setup.sh" ]; then
-      echo "patch olsrd_setup.sh..." >> $cfgusrdir$log
-      sed -i "s/^if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') \]; then/if \[ \$(echo -n I | od -to2 | awk '{ print substr(\$2,6,1); exit}') == 0 \]; then/" /config/scripts/post-config.d/olsrd_setup.sh
-fi
-
 # CPO take over very-old verions' configfiles to user-data if missing there
 if [ ! -f $cfgusrdir"olsrd.default" ] && [ -f "/etc/default/olsrd" ]; then
       cp /etc/default/olsrd $cfgusrdir"olsrd.default" >> $cfgusrdir$log
@@ -186,43 +284,6 @@ if [ -w "/etc/olsrd/olsrdv4.conf" ]; then
 fi
 if [ -w "/etc/olsrd/olsrdv6.conf" ]; then
       rm /etc/olsrd/olsrdv6.conf >> $cfgusrdir$log
-fi
-
-# CPO patch previous version with activated setup script - need to implove wizard detection
-#
-# was:
-#for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
-#    if [[ $(grep 'OLSRd_V1' $i) ]]; then
-#        olsrdv1wizard=$i
-#    else
-#        echo "error: OLSRd_V1 wizard not found!"
-#        exit
-#    fi
-#done
-
-if [ -w $olsrdsetupscriptfile ] &&
-   [ $(head -n 10 $olsrdsetupscriptfile | grep -n "if \[\[ \$(grep 'OLSRd_V1' \$i) \]\]; then" | wc -l) == "1" ] ; then
-     echo "Patching existing olsrd_setup.sh in post-config.d to support multiple wizards" >> $cfgusrdir$log
-     startatline=$(head -n 10 $olsrdsetupscriptfile | grep -n "if \[\[ \$(grep 'OLSRd_V1' \$i) \]\]; then" | awk -F":" {'print $1'})
-     finishatline=$(head -n 20 $olsrdsetupscriptfile | grep -ne '^done' | awk -F":" {'print $1'})
-     totallines=$(cat $olsrdsetupscriptfile | wc -l)
-     head $olsrdsetupscriptfile -n $(($startatline -2)) >/tmp/olsrd_setup_fixed
-     cat >>/tmp/olsrd_setup_fixed <<'ENDSCRIPTCONTENT'
-for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
-    if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
-        olsrdv1wizard=$i
-        break
-    fi
-done
-if [ ! $olsrdv1wizard ]; then
-    echo "error: OLSRd_V1 wizard not found!"
-    exit
-fi
-ENDSCRIPTCONTENT
-     tail $olsrdsetupscriptfile -n $(($totallines - $finishatline)) >>/tmp/olsrd_setup_fixed
-     cp /tmp/olsrd_setup_fixed $olsrdsetupscriptfile >> $cfgusrdir$log
-     rm /tmp/olsrd_setup_fixed >> $cfgusrdir$log
-     chmod 755 $olsrdsetupscriptfile
 fi
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
@@ -19574,95 +19635,10 @@ apply () {
             if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
                 cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile > /dev/null
             else
-                cat >$olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
-#!/bin/bash
-olsrdv1wizard=""
-for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
-    if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
-        olsrdv1wizard=$i
-        break
-    fi
-done
-if [ ! $olsrdv1wizard ]; then
-    echo "error: OLSRd_V1 wizard not found!"
-    exit
-fi
-cfgusrdir="/config/user-data/"
-# olsrd installation logfile
-log="olsrd-install.log"
-# default olsrd configuration files
-olsrdconfig='/etc/olsrd/olsrd.conf'
-olsrd4init='/etc/init.d/olsrd'
-olsrd4default='/etc/default/olsrd'
-olsrd4bin='/usr/sbin/olsrd'
-olsrd6init='/etc/init.d/olsrd6'
-olsrd6default='/etc/default/olsrd6'
-olsrd6bin='/usr/sbin/olsrd6'
-# user-defined olsrd configuration files
-olsrd4config="${cfgusrdir}olsrd4.conf"
-olsrd6config="${cfgusrdir}olsrd6.conf"
-# hosts to check for online status
-v4iphost='8.8.8.8'
-v4dnshost='www.google.com'
-v6iphost='2001:4860:4860::8888'
-v6dnshost='www.google.com'
-# check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
-if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
-    arch='mips'
-else
-    arch='mipsel'
-fi
-# both packages, olsrd *and* olsrd-plugins are required and must be specified!
-# german debian mirror
-olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
-olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
-echo '#!/bin/bash' > func.sh
-sed -n "/^onlinecheck ()/,/^}/p" $olsrdv1wizard >> func.sh
-sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
-sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
-sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
-sed -n "/^load ()/,/^}/p" $olsrdv1wizard >> func.sh
-source func.sh
-load
-rm -f func.sh
-# if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
-if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-    if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-
-        if [ ! -d /config/scripts/pre-config.d ]; then
-            # create missing directory
-            mkdir /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-            chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$cfgusrdir$log 2>>$cfgusrdir$log
-        fi
-        if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-            #create file
-            echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-            chmod 755 /config/scripts/pre-config.d/ebtables.sh
-        else
-            #add lines to file on top
-            linenumber=2
-            sed -i $linenumber'i\
-#olsrdwizard: dont forward ethernet frames between bridge ports\
-ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$log 2>>$cfgusrdir$log
-        fi
-        ebtables -P FORWARD DROP
-    fi
-else
-    if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
-
-
-        sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
-        sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
-        ebtables -P FORWARD ACCEPT
-    fi
-fi
-# restart daemon(s)
-$olsrd4init restart >> $cfgusrdir$log
-$olsrd6init restart >> $cfgusrdir$log
-exit 0
-ENDSCRIPTCONTENT
+                writesetupscript
+                cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile
                 chmod +x $olsrdsetupscriptfile
+                rm /tmp/olsrdsetupscriptfile
             fi
         fi
     else
