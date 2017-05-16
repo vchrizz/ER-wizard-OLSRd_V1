@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [vchrizz0903g/201705161]
+# Version [vchrizz0903g/201705162]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19633,19 +19633,21 @@ apply () {
     if [[ "$olsrdsetupscript" == "on" ]]; then
         if [[ ! -w $olsrdsetupscript ]]; then
             if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
-                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile > /dev/null
+                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile >/dev/null 2>/dev/null
+                chmod +x $olsrdsetupscriptfile >/dev/null 2>/dev/null
+                rm $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
             else
                 writesetupscript
-                cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile
-                chmod +x $olsrdsetupscriptfile
-                rm /tmp/olsrdsetupscriptfile
+                cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile >/dev/null 2>/dev/null
+                chmod +x $olsrdsetupscriptfile >/dev/null 2>/dev/null
+                rm /tmp/olsrdsetupscriptfile >/dev/null 2>/dev/null
             fi
         fi
     else
         if [[ -w $olsrdsetupscriptfile ]]; then
-            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) > /dev/null
+            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
         fi
-        rm -f $olsrdsetupscriptfile
+        rm -f $olsrdsetupscriptfile >/dev/null 2>/dev/null
     fi
 
     ###############################
