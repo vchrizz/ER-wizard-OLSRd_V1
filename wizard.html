@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.7.0+)
-versioninfo=201705162
+versioninfo=201709120
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201705162
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -15,7 +15,7 @@ autoupdate=201705162
 </div>
 <legend style="position:absolute;right:0px;padding:5px;">
     <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
-    <br>Version [vchrizz0903g/20170516]</center>
+    <br>Version [cpo0903h/20170912]</center>
 </legend>
 <div style="padding:15px;border: 1px solid lightgray;width:648px">
   <table border="0">
@@ -113,6 +113,8 @@ autoupdate=201705162
     <div class="addable" data-min="1" data-max="1" data-object="olsrdsettings" data-objectify="1">
         <div class="addable-template">
             <div class="multi">
+                <div><input type="text" name="Pollrate" value="0.1" /></div><div><span class="text" data-infotip='Polling rate in seconds(float)'>Pollrate</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
                 <div><input type="text" name="HelloInterval" value="5.0" /></div><div><span class="text" data-infotip='Hello interval in seconds(float)'>HelloInterval</span></div>
                 <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
                 <div><input type="text" name="HelloValidityTime" value="125.0" /></div><div><span class="text" data-infotip='HELLO validity time'>HelloValidityTime</span></div>

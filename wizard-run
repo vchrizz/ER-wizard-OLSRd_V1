@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [vchrizz0903g/201705162]
+# Version [cpo0903h/201709120]
 # ^-- previous line is used frombmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -29,6 +29,7 @@
 # *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
 # *) 02/2017 CPO: fix setup-script to correctly find OLSRd_V1 wizard after FW update, if other wizards are installed !
 # *) 05/2017 fixed wizard-run: changed location of ebtables initialization from /etc/rc.local to /config/scripts/pre-config.d/ebtables.sh
+# *) 09/2017 CPO: br9 is not added to MESH_IF, but to olsrd.conf with mode=silent - meant to be used for OpenVPN tunnels
 #
 
 ACTION=$1
@@ -19462,7 +19463,9 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
         olsrd4runonboot='"olsrd4runonboot":"on",'
     fi
     olsrd4interfaces=''
-    olsrd4meshif=$(awk -F= '/MESH_IF=/ { print $2 }' $olsrd4default | tr -d \")
+    #olsrd4meshif=$(awk -F= '/MESH_IF=/ { print $2 }' $olsrd4default | tr -d \")
+    olsrd4meshif=$(awk -F= '/MESH_IF=/ { print $2 }' $olsrd4default | tr -d \")$(awk -F" " '/^Interface.*\{/ {print " "$2}' $olsrd4config | tr -d \")
+
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     v4interfacelist=$(ip -f inet addr | awk '/^[0-9]:*|inet/ { print $2 }' | sed ':a;N;$!ba;s/:\n/;/g' | grep ";")
     for v4if in $v4interfacelist; do
@@ -19614,6 +19617,20 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
         autoupdatefromgithub=',"autoupdatefromgithub":"on"'
     fi
 
+    #get emission settings
+    olsrdsettings='"olsrdsettings":[{'
+    olsrdsettings=$olsrdsettings'"HelloInterval":"'$(awk '/HelloInterval/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"HelloValidityTime":"'$(awk '/HelloValidityTime/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"TcValidityTime":"'$(awk '/TcValidityTime/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"TcInterval":"'$(awk '/TcInterval/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"MidValidityTime":"'$(awk '/MidValidityTime/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"MidInterval":"'$(awk '/MidInterval/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"HnaValidityTime":"'$(awk '/HnaValidityTime/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings',"Pollrate":"'$(awk '/Pollrate/ {print $2}' $olsrd4config)'"'
+    olsrdsettings=$olsrdsettings'}]'
+
     #
     # get all variables together for output
     #
@@ -19621,7 +19638,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$cfgusrdir$
     #ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6ip6multicastsite$olsrd6ip6multicastglobal$olsrd6hna$olsrd6lqmult\"olsrd6config\":[$olsrd6interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
     ###echo -n "{\"success\":\"1\",\"data\":{ \"olsrdstatus\":[{$olsrdpkgstatus,$olsrddaemonstatus}],$ipv4conf,$ipv6conf },"
-    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf },"
+    echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
     #echo "\"definition\":{ \"olsrd4interface\":$ilist, \"ipv4address\":$ipv4list, \"olsrd6interface\":$ilist, \"ipv6address\":$ipv6list }}"
     echo "\"definition\":{ }}"
 }
@@ -19672,13 +19689,28 @@ apply () {
         fi
     fi
     # set checked interfaces, else set default interface
-    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT)"
+    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT | grep -v br9)"
     if [[ ! -z $enabledv4interfaces ]]; then
         enabledv4interfaces=$(echo $enabledv4interfaces | sed 's/\ /\\\ /')
         sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv4interfaces\"/" $olsrd4default
     else
         sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd4default
     fi
+
+    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT | grep -c br9) \> 0 ]; then
+        #interface eintragen wenn fehlt
+        if [ $(grep -c "Interface \"br9\" {" $olsrd4config) -eq 0 ]; then
+            linenumber=$(($(grep -n "MprCoverage" /config/user-data/olsrd4.conf | cut -d":" -f1)+1))
+            sed     -i $linenumber'i\
+Interface "br9" {\
+  Mode "silent"\
+}' $olsrd4config
+        fi
+    elif [ $(grep -c "Interface \"br9\" {" $olsrd4config) \> 0 ]; then
+        #interface rausnehmen!
+        sed -i "/^Interface \"br9\" {/,/^}/d" $olsrd4config
+    fi
+
     # backup /etc/default/olsrd
     cp -f $olsrd4default $cfgusrdir$(basename $olsrd4default).default > /dev/null
     # set ip4broadcast
@@ -19837,6 +19869,7 @@ apply () {
     #
     # set emission intervals
     #
+    Pollrate="$(jq -M -r '.olsrdsettings[] | .Pollrate' $INPUT)"
     HelloValidityTime="$(jq -M -r '.olsrdsettings[] | .HelloValidityTime' $INPUT)"
     HelloInterval="$(jq -M -r '.olsrdsettings[] | .HelloInterval' $INPUT)"
     TcValidityTime="$(jq -M -r '.olsrdsettings[] | .TcValidityTime' $INPUT)"
@@ -19845,6 +19878,7 @@ apply () {
     MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT)"
     HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT)"
     HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT)"
+    sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config $olsrd6config
     sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config $olsrd6config
     sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config $olsrd6config
     sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config $olsrd6config
