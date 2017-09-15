@@ -23,3 +23,4 @@ OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
     *) 02/2017 CPO: fix olsrd6.conf for using LinkQualityMult - param IpVersion is needed before LQ factors to parse IPv6 entries
     *) 02/2017 CPO: feature - restart olsrd for IPv4 and IPv6 individually
     *) 05/2017 fixed wizard-run: changed location of ebtables initialization from /etc/rc.local to /config/scripts/pre-config.d/ebtables.sh
+    *) 09/2017 recent olsrd 0.9.6.2 (from git) added for mips and mipsel
