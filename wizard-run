@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo962a/201709190]
+# Version [cpo962a/201709211]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -29,8 +29,9 @@
 # *) 02/2017 CPO: fix setup-script to correctly find OLSRd_V1 wizard after FW update, if other wizards are installed !
 # *) 05/2017 fixed wizard-run: changed location of ebtables initialization from /etc/rc.local to /config/scripts/pre-config.d/ebtables.sh
 # *) 09/2017 CPO: br9 is not added to MESH_IF, but to olsrd.conf with mode=silent - meant to be used for OpenVPN tunnels
-# *) 09/2017 updated olsrd packages to version 0.9.6.2-1 (pre-0.9.7) architecture
-# *) 09/2017 move logfile from /config/user-data to /var/log, do not recreate log on wizard-load
+# *) 09/2017 updated olsrd packages to version 0.9.6.2-1 (pre-0.9.7) for mips and mipsel
+# *) 09/2017 move logfile from /config/user-data to /var/log, do not recreate log on wizard-load, use /tmp/olsrd.log
+# *) 09/2017 added option to enable/use watchdog plugin with watchdog script
 #
 
 ACTION=$1
@@ -20661,6 +20662,28 @@ setupv4olsrd () {
         [ $(grep -c 'LoadPlugin "/usr/lib/olsrd/' $olsrd4config) \> 0 ] && sed -i "s/LoadPlugin \"\/usr\/lib\/olsrd\//LoadPlugin \"/g" $olsrd4config 2>>$log
         sed -i "s/olsrd_jsoninfo.so.0.0/olsrd_jsoninfo.so.1.1/g" $olsrd4config 2>>$log
         sed -i "s/olsrd_txtinfo.so.0.1/olsrd_txtinfo.so.1.1/g" $olsrd4config 2>>$log
+    fi
+    #add logging to /etc/init.d/olsrd
+    if [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
+        echo "Add logging to /etc/init.d/olsrd"
+        ##add variables
+        linenumber=$(($(grep -n "PID_FILE=/var/run" $olsrd4init | cut -d":" -f1)+1))
+        sed     -i $linenumber'i\
+LOG="/tmp/olsrd.log"\
+UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
+        ## add starting
+        linenumber=$(($(grep -n 'echo -n "Starting $DESC: "' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+        sed     -i $linenumber'i\
+        echo $(date)": starting olsrd - "$UG >>$LOG' $olsrd4init
+        ## add stopping
+        linenumber=$(($(grep -n 'echo -n "Stopping $DESC: "' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+        sed     -i $linenumber'i\
+        echo $(date)": stopping olsrd - "$UG >>$LOG' $olsrd4init
+        ## add rm watchdog-files
+        linenumber=$(($(grep -n 'rm -f $PID_FILE' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+        sed     -i $linenumber'i\
+        [ -w /tmp/olsrd.watchdog.compare ] && rm -f /tmp/olsrd.watchdog.compare 2>/dev/null\
+        [ -w /tmp/olsrd.watchdog ] && rm -f /tmp/olsrd.watchdog 2>/dev/null' $olsrd4init
     fi
 }
 # function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
