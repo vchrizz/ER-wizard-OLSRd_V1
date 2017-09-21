@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo962a/201709150]
+# Version [cpo962a/201709190]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -162,6 +162,24 @@ else
         sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD ACCEPT
     fi
+fi
+#add cronjob? if missing, olsrd-autostart=on, executeable watchdogscript 
+if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
+   [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
+   [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
+   [ -x /etc/olsrdwatchdog ] ; then
+  echo add watchdog to crontab
+  echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
+fi
+#need to remove cronjob?
+if [ ! -f $olsrd4default ] || 
+   [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") -eq 0 ] ||
+   [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
+   [ ! -x /etc/olsrdwatchdog ]; then
+   if [ -f /etc/cron.d/olsrdwatchdog ]; then
+      echo remove watchdog from crontab
+      rm /etc/cron.d/olsrdwatchdog
+   fi
 fi
 # restart daemon(s)
 $olsrd4init restart >>$log
@@ -20534,18 +20552,28 @@ installolsrd () {
           pidfile=$(cat /var/run/olsrd.pid 2>/dev/null)
           if [ "$pidfile" ]; then
             if [ $running -eq $pidfile ]; then
-              echo all is fine >/dev/null
+              echo Compared PIDs from process ($running) and pid-file ($pidfile): all is fine >>$log
             else
+              echo PID from process ($running) not matching pid-file ($pidfile)! >>$log
+              echo Killing process... >>$log
               kill $running
-              rm -f /var/run/olsrd.pid
+              echo Removing pidfile... >>$log
+              rm -f /var/run/olsrd.pid >>$log 2>>$log
+              echo Starting process... >>$log
               /etc/init.d/olsrd start
+              echo PID done... >>$log
             fi
           else
+            echo No PID for process ($running) found! >>$log
+            echo Killing process... >>$log
             kill $running
+            echo Starting process... >>$log
             /etc/init.d/olsrd start
+            echo PID done... >>$log
           fi
         else
-          [ -f /var/run/olsrd.pid ] && rm /var/run/olsrd.pid
+          echo PID-Check: no process running. >>$log
+          [ -f /var/run/olsrd.pid ] && echo Removing PID-file >>$log && rm /var/run/olsrd.pid >>$log 2>>$log
         fi
         dpkg -i ${olsrdpkg} ${olsrdplgpkg} >>$log
         statusolsrd=$?
@@ -20651,6 +20679,10 @@ setupv6olsrd () {
         cp -f $olsrd4init $olsrd6init 2> /dev/null
         sed -i 's/olsrd/olsrd6/g' $olsrd6init
         #sed -i 's/^DAEMON=.*/DAEMON=\/usr\/sbin\/olsrd/' $olsrd6init
+    fi
+    #disable watchdog for olsrd6!
+    if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd6config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd6config) != \#* ]]; then
+        sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^/#/' $olsrd6config
     fi
     cp -f $olsrd4bin $olsrd6bin 2> /dev/null
 }
@@ -20819,7 +20851,10 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) != \#* ]]; then
         olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",'
     fi
-    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo
+    if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) != \#* ]]; then
+        olsrd4watchdog='"olsrd4watchdog":"on",'
+    fi
+    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo$olsrd4watchdog
 
     ###############################
     #  IPv6 OLSRd LOAD function   #
@@ -21077,6 +21112,24 @@ Interface "br9" {\
     else
         if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) != \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4config
+        fi
+    fi
+    olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT)
+    if [[ "$olsrd4watchdog" == "on" ]]; then
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ]; then
+            echo '#LoadPlugin "olsrd_watchdog.so.0.1"
+#{
+#  PlParam "file" "/tmp/olsrd.watchdog"
+#  PlParam "interval" "20"
+#}
+' >>$olsrd4config
+        fi
+        if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4config
+        fi
+    else
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^/#/' $olsrd4config
         fi
     fi
 
@@ -21351,28 +21404,40 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT)
     olsrdrestart6now=$(jq -M -r '.olsrdrestart6now' $INPUT)
     if [[ "$olsrdrestartnow" == "on" ]]; then
-    # fix the pid-file to match the process id running in order to mark init.d#restart work properly
+        # fix the pid-file to match the process id running in order to mark init.d#restart work properly
         running=$(ps aux | grep olsrd4 | grep -v grep | awk '{print $2'}) 2>/dev/null
         if [ "$running" ]; then
           pidfile=$(cat /var/run/olsrd.pid 2>/dev/null)
           if [ "$pidfile" ]; then
             if [ $running -eq $pidfile ]; then
+              echo Compared PIDs from process ($running) and pid-file ($pidfile): all is fine - restarting >>$log
               $olsrd4init restart >>$log
             else
+              echo PID from process ($running) not matching pid-file ($pidfile)! >>$log
+              echo Killing process... >>$log
               kill $running
-              rm -f /var/run/olsrd.pid
+              echo Removing pidfile... >>$log
+              rm -f /var/run/olsrd.pid >>$log 2>>$log
+              echo Starting process... >>$log
               /etc/init.d/olsrd start
+              echo PID done... >>$log
             fi
           else
+            echo No PID for process ($running) found! >>$log
+            echo Killing process... >>$log
             kill $running
+            echo Starting process... >>$log
             /etc/init.d/olsrd start
+            echo PID done... >>$log
           fi
         else
-          [ -f /var/run/olsrd.pid ] && rm /var/run/olsrd.pid
+          echo PID-Check: no process running. >>$log
+          [ -f /var/run/olsrd.pid ] && echo Removing PID-file >>$log && rm /var/run/olsrd.pid >>$log 2>>$log
+          echo Starting process... >>$log
           $olsrd4init start >>$log
+          echo PID done... >>$log
         fi
         # restart daemon v4
-        
     fi
     if [[ "$olsrdrestart6now" == "on" ]]; then
         # restart daemon v6
