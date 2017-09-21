@@ -198,10 +198,12 @@ writewatchdogscript () {
     cat >$olsrdwatchdogscriptfile <<'ENDSCRIPTCONTENT'
 #!/bin/bash
 #init.d script of oslr creates/deletes the compare file to enable/disable this watchdog
+olsrd4config="/config/user-data/olsrd4.conf"
 LOG="/tmp/olsrd.log"
 UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")
 
-if [ -f /tmp/olsrd.watchdog.compare ] && [ -f /tmp/olsrd.watchdog ]; then
+if [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
+   [ -f /tmp/olsrd.watchdog.compare ] && [ -f /tmp/olsrd.watchdog ]; then
   wd=$(cat /tmp/olsrd.watchdog)
   comp=$(stat -c %Y /tmp/olsrd.watchdog.compare)
   #test if watchdog.compare file is newer
@@ -215,7 +217,7 @@ fi
 touch /tmp/olsrd.watchdog.compare
 exit 0
 ENDSCRIPTCONTENT
-    chmod 644 $olsrdwatchdogscriptfile
+    chmod 744 $olsrdwatchdogscriptfile
 }
 
 #base64begin: olsrd packages for offline use
