@@ -214,7 +214,7 @@ fi
 touch /tmp/olsrd.watchdog.compare
 exit 0
 ENDSCRIPTCONTENT
-    chmod 755 $olsrdwatchdogscriptfile
+    chmod 644 $olsrdwatchdogscriptfile
 }
 
 #base64begin: olsrd packages for offline use
@@ -21151,7 +21151,7 @@ Interface "br9" {\
     fi
     olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT)
     if [[ "$olsrd4watchdog" == "on" ]]; then
-        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ]; then
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) -eq 0 ]; then
             echo '#LoadPlugin "olsrd_watchdog.so.0.1"
 #{
   #PlParam "file" "/tmp/olsrd.watchdog"
@@ -21178,6 +21178,7 @@ Interface "br9" {\
        [ -x /etc/olsrdwatchdog ] ; then
       echo add watchdog to crontab >>$log
       echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
+      chmod 644 /etc/cron.d/olsrdwatchdog
     fi
     #need to remove cronjob?
     if [ ! -f $olsrd4default ] || 
