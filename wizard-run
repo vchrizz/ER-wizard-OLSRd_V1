@@ -204,14 +204,14 @@ if [ -f /tmp/olsrd.watchdog.compare ] && [ -f /tmp/olsrd.watchdog ]; then
   wd=$(cat /tmp/olsrd.watchdog)
   comp=$(stat -c %Y /tmp/olsrd.watchdog.compare)
   #test if watchdog.compare file is newer
-  if [ "$comp" ] && [ "$wd" ] && [ $(($comp -5)) \> $(($wd)) ];then
+  if [ "$comp" ] && [ "$wd" ] && [ $(($comp -10)) \> $(($wd)) ];then
     ot=`stat -c %y /tmp/olsrd.watchdog.compare`
     echo $(date)": olsrd crashed/freezed (at "$(date -d @$wd)"), restarting... - "$UG >>$LOG
     /etc/init.d/olsrd restart
   fi
-  #create new compare file
-  touch /tmp/olsrd.watchdog.compare
 fi
+#create new compare file
+touch /tmp/olsrd.watchdog.compare
 exit 0
 ENDSCRIPTCONTENT
     chmod 755 $olsrdwatchdogscriptfile
@@ -20584,27 +20584,27 @@ installolsrd () {
           pidfile=$(cat /var/run/olsrd.pid 2>/dev/null)
           if [ "$pidfile" ]; then
             if [ $running -eq $pidfile ]; then
-              echo Compared PIDs from process ($running) and pid-file ($pidfile): all is fine >>$log
+              echo "Compared PIDs from process ("$running") and pid-file ("$pidfile"): all is fine" >>$log
             else
-              echo PID from process ($running) not matching pid-file ($pidfile)! >>$log
-              echo Killing process... >>$log
+              echo "PID from process ("$running") not matching pid-file ("$pidfile")!" >>$log
+              echo "Killing process..." >>$log
               kill $running
-              echo Removing pidfile... >>$log
+              echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
-              echo Starting process... >>$log
+              echo "Starting process..." >>$log
               /etc/init.d/olsrd start
-              echo PID done... >>$log
+              echo "PID done..." >>$log
             fi
           else
-            echo No PID for process ($running) found! >>$log
-            echo Killing process... >>$log
+            echo "No PID for process ("$running") found!" >>$log
+            echo "Killing process..." >>$log
             kill $running
-            echo Starting process... >>$log
+            echo "Starting process..." >>$log
             /etc/init.d/olsrd start
-            echo PID done... >>$log
+            echo "PID done..." >>$log
           fi
         else
-          echo PID-Check: no process running. >>$log
+          echo "PID-Check: no process running." >>$log
           [ -f /var/run/olsrd.pid ] && echo Removing PID-file >>$log && rm /var/run/olsrd.pid >>$log 2>>$log
         fi
         dpkg -i ${olsrdpkg} ${olsrdplgpkg} >>$log
@@ -21161,9 +21161,10 @@ Interface "br9" {\
         fi
         if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4config
-            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd.watchdog/' $olsrd4config
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd.watchdog"/' $olsrd4config
             sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "interval" "5"/PlParam "interval" "5"/' $olsrd4config
             date "+%s" >/tmp/olsrd.watchdog
+            touch /tmp/olsrd.watchdog.compare
         fi
     else
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) != \#* ]]; then
@@ -21466,32 +21467,32 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
           pidfile=$(cat /var/run/olsrd.pid 2>/dev/null)
           if [ "$pidfile" ]; then
             if [ $running -eq $pidfile ]; then
-              echo Compared PIDs from process ($running) and pid-file ($pidfile): all is fine - restarting >>$log
+              echo "Compared PIDs from process ("$running") and pid-file ("$pidfile"): all is fine - restarting" >>$log
               $olsrd4init restart >>$log
             else
-              echo PID from process ($running) not matching pid-file ($pidfile)! >>$log
-              echo Killing process... >>$log
+              echo "PID from process ("$running") not matching pid-file ("$pidfile")!" >>$log
+              echo "Killing process..." >>$log
               kill $running
-              echo Removing pidfile... >>$log
+              echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
-              echo Starting process... >>$log
+              echo "Starting process..". >>$log
               /etc/init.d/olsrd start
-              echo PID done... >>$log
+              echo "PID done..." >>$log
             fi
           else
-            echo No PID for process ($running) found! >>$log
-            echo Killing process... >>$log
+            echo "No PID for process ("$running") found!" >>$log
+            echo "Killing process..." >>$log
             kill $running
-            echo Starting process... >>$log
+            echo "Starting process..." >>$log
             /etc/init.d/olsrd start
-            echo PID done... >>$log
+            echo "PID done..." >>$log
           fi
         else
-          echo PID-Check: no process running. >>$log
+          echo "PID-Check: no process running." >>$log
           [ -f /var/run/olsrd.pid ] && echo Removing PID-file >>$log && rm /var/run/olsrd.pid >>$log 2>>$log
-          echo Starting process... >>$log
+          echo "Starting process..." >>$log
           $olsrd4init start >>$log
-          echo PID done... >>$log
+          echo "PID done..." >>$log
         fi
         # restart daemon v4
     fi
