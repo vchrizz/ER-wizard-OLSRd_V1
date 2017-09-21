@@ -21297,15 +21297,15 @@ Interface "br9" {\
     MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT)"
     HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT)"
     HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT)"
-    sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config $olsrd6config
-    sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config $olsrd6config
-    sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config $olsrd6config
-    sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config $olsrd6config
-    sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config $olsrd6config
-    sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config $olsrd6config
-    sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
-    sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
-    sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
+    [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config $olsrd6config
+    [ "$HelloInterval" ] && sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config $olsrd6config
+    [ "$HelloValidityTime" ] && sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config $olsrd6config
+    [ "$TcInterval" ] && sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config $olsrd6config
+    [ "$TcValidityTime" ] && sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config $olsrd6config
+    [ "$MidInterval" ] && sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config $olsrd6config
+    [ "$MidValidityTime" ] && sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
+    [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
+    [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
 
     # CPO fix for LQ on olsrd6:
     # IpVersion 6 must be defined prior to LineQualityMult
