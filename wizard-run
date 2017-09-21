@@ -173,6 +173,7 @@ if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
    [ -x /etc/olsrdwatchdog ] ; then
   echo add watchdog to crontab
   echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
+  chmod 744 /etc/cron.d/olsrdwatchdog
 fi
 #need to remove cronjob?
 if [ ! -f $olsrd4default ] || 
