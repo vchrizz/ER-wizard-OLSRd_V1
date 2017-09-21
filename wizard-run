@@ -65,6 +65,7 @@ fi
 olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
 olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
+olsrdwatchdogscriptfile="/etc/olsrdwatchdog"
 
 #define update sources on github
 gitowner="vchrizz"
@@ -122,11 +123,13 @@ fi
 # german debian mirror
 olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
 olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
+olsrdwatchdogscriptfile="/etc/olsrdwatchdog"
 echo '#!/bin/bash' > func.sh
 sed -n "/^onlinecheck ()/,/^}/p" $olsrdv1wizard >> func.sh
 sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
 sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
 sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >> func.sh
+sed -n "/^writewatchdogscript ()/,/^}/p" $olsrdv1wizard >> func.sh
 sed -n "/^load ()/,/^}/p" $olsrdv1wizard >> func.sh
 source func.sh
 load
@@ -188,6 +191,32 @@ exit 0
 ENDSCRIPTCONTENT
 }
 
+#function to write setup-script
+writewatchdogscript () {
+    echo "installing /etc/olsrdwatchdog" >>$log
+    cat >$olsrdwatchdogscriptfile <<'ENDSCRIPTCONTENT'
+#!/bin/bash
+#init.d script of oslr creates/deletes the compare file to enable/disable this watchdog
+LOG="/tmp/olsrd.log"
+UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")
+
+if [ -f /tmp/olsrd.watchdog.compare ] && [ -f /tmp/olsrd.watchdog ]; then
+  wd=$(cat /tmp/olsrd.watchdog)
+  comp=$(stat -c %Y /tmp/olsrd.watchdog.compare)
+  #test if watchdog.compare file is newer
+  if [ "$comp" ] && [ "$wd" ] && [ $(($comp -5)) \> $(($wd)) ];then
+    ot=`stat -c %y /tmp/olsrd.watchdog.compare`
+    echo $(date)": olsrd crashed/freezed (at "$(date -d @$wd)"), restarting... - "$UG >>$LOG
+    /etc/init.d/olsrd restart
+  fi
+  #create new compare file
+  touch /tmp/olsrd.watchdog.compare
+fi
+exit 0
+ENDSCRIPTCONTENT
+    chmod 755 $olsrdwatchdogscriptfile
+}
+
 #base64begin: olsrd packages for offline use
 # !dont edit or remove this comment!
 # other files than wizard-run/wizard.html/validator.json are ignored when uploading wizards to the router.
@@ -236,6 +265,9 @@ else
     chmod +x $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null
     rm /tmp/olsrdsetupscriptfile
 fi
+
+# rewrite watchdog script file to be up-to-date
+writewatchdogscript
 
 # CPO remove old installer script!
 echo "clean up old install-scripts and package files..." >>$log
@@ -20745,6 +20777,9 @@ load () {
     #olsrdstatus="\"olsrdstatus\":[{\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\"}]"
     olsrddaemonstatus="\"daemonstatus\":\"IPv4: ${v4netstatus//\//-}. IPv6: ${v6netstatus//\//-}.\""
 
+    #establish /etc/olsrdwatchdog script if missing
+    [ ! -x $olsrdwatchdogscriptfile ] && writewatchdogscript
+
     #
     # post-config script in case of firmware upgrade
     #
@@ -21140,7 +21175,7 @@ Interface "br9" {\
        [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
        [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
        [ -x /etc/olsrdwatchdog ] ; then
-      echo add watchdog to crontab
+      echo add watchdog to crontab >>$log
       echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
     fi
     #need to remove cronjob?
@@ -21149,8 +21184,8 @@ Interface "br9" {\
        [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
        [ ! -x /etc/olsrdwatchdog ]; then
        if [ -f /etc/cron.d/olsrdwatchdog ]; then
-          echo remove watchdog from crontab
-          rm /etc/cron.d/olsrdwatchdog
+          echo remove watchdog from crontab >>$log
+          rm /etc/cron.d/olsrdwatchdog >>$log 2>>$log
        fi
     fi
 
