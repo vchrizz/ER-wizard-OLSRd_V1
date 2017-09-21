@@ -21119,13 +21119,16 @@ Interface "br9" {\
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ]; then
             echo '#LoadPlugin "olsrd_watchdog.so.0.1"
 #{
-#  PlParam "file" "/tmp/olsrd.watchdog"
-#  PlParam "interval" "20"
+  #PlParam "file" "/tmp/olsrd.watchdog"
+  #PlParam "interval" "5"
 #}
 ' >>$olsrd4config
         fi
         if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) == \#* ]]; then
+            #sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4config
             sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4config
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd.watchdog/' $olsrd4config
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "interval" "5"/PlParam "interval" "5"/' $olsrd4config
         fi
     else
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) != \#* ]]; then
