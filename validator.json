@@ -13,7 +13,7 @@
 			"ipv4": 1
 		},
 		"checks": {
-			"required": true
+			"required": false
 		},
 		"nchecks": {
 			"required": false
