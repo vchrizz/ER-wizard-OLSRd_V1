@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [cpo962a/201709211]
+# Version [cpo0951/201710042]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -273,6 +273,9 @@ fi
 # rewrite watchdog script file to be up-to-date
 writewatchdogscript
 
+#Remove future versions from user-data directory
+rm -f /config/user-data/olsrd*0.9.6.2-1*.deb >/dev/null
+
 # CPO remove old installer script!
 echo "clean up old install-scripts and package files..." >>$log
 if [ -f "/config/scripts/post-config.d/install_olsrdv4.sh" ]; then
@@ -355,20 +358,24 @@ if [ -w $log ]; then
       rm $log >>$log
 fi
 
-#fix paths to plugins for olsrd_0.9.6.2-1
+#fix paths to plugins for olsrd_0.9.5
 if [ -w $olsrd4config ]; then
     [ $(grep -c 'LoadPlugin "/usr/lib/olsrd/' $olsrd4config) \> 0 ] && sed -i "s/LoadPlugin \"\/usr\/lib\/olsrd\//LoadPlugin \"/g" $olsrd4config 2>>$log
-    sed -i "s/olsrd_jsoninfo.so.0.0/olsrd_jsoninfo.so.1.1/g" $olsrd4config 2>>$log
-    sed -i "s/olsrd_txtinfo.so.0.1/olsrd_txtinfo.so.1.1/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_jsoninfo.so.1.1/olsrd_jsoninfo.so.0.0/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_txtinfo.so.1.1/olsrd_txtinfo.so.0.1/g" $olsrd4config 2>>$log
     sed -i "s/olsrd_dyn_gw.so.0.4/olsrd_dyn_gw.so.0.5/g" $olsrd4config 2>>$log
-    sed -i "s/olsrd_nameservice.so.0.2/olsrd_nameservice.so.0.4/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.2/olsrd_nameservice.so.0.3/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.4/olsrd_nameservice.so.0.3/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.5/olsrd_nameservice.so.0.3/g" $olsrd4config 2>>$log
 fi
 if [ -w $olsrd6config ]; then
     [ $(grep -c 'LoadPlugin "/usr/lib/olsrd/' $olsrd6config) \> 0 ] && sed -i "s/LoadPlugin \"\/usr\/lib\/olsrd\//LoadPlugin \"/g" $olsrd6config 2>>$log
-    sed -i "s/olsrd_jsoninfo.so.0.0/olsrd_jsoninfo.so.1.1/g" $olsrd6config 2>>$log
-    sed -i "s/olsrd_txtinfo.so.0.1/olsrd_txtinfo.so.1.1/g" $olsrd6config 2>>$log
-    sed -i "s/olsrd_dyn_gw.so.0.4/olsrd_dyn_gw.so.0.5/g" $olsrd4config 2>>$log
-    sed -i "s/olsrd_nameservice.so.0.2/olsrd_nameservice.so.0.4/g" $olsrd4config 2>>$log
+    sed -i "s/olsrd_jsoninfo.so.1.1/olsrd_jsoninfo.so.0.0/g" $olsrd6config 2>>$log
+    sed -i "s/olsrd_txtinfo.so.1.1/olsrd_txtinfo.so.0.1/g" $olsrd6config 2>>$log
+    sed -i "s/olsrd_dyn_gw.so.0.4/olsrd_dyn_gw.so.0.5/g" $olsrd6config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.2/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.4/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
+    sed -i "s/olsrd_nameservice.so.0.5/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
 fi
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
@@ -5275,7 +5282,7 @@ ly2yPUyXKMGFRGd9ufr89PX26per274ncz1oJ6xgSt7ilO41WOeMiwtl3peoUUr3zREUcK1P1+IQ
 YnW9ilMsVsew95dTP9JzPxrkm7B2SaNM+BMsb+GVeumm/W4xxMPDzRdGQh7gZRZSdey/PyjC6Ps7
 rx+LWT7/99NwuH7fa/cCvzce95TqDf3eUMkcjkmuzKQa82Ok1MGeFRHxfacZFq8BmiMEbJsNJdqp
 w5nrUpe61KUudalLXepSl7rUpS51qUtd6lKXutSlLrr8G8cXe4wAwA0ACg==
-" | base64 -d > $cfgusrdir/olsrd_0.9.6.2-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.5-1_mips.deb
 if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >>$log; else echo "extraction of $arch olsrd failed" >>$log; fi
 # base64: olsrd-plugins_0.9.5-1_mips.deb
 echo "
@@ -10409,7 +10416,7 @@ fEtImXh/mfhJizNKSQdurYWORbd0BrpU+fzvzxnjR6Yw8XfoLJGemSnOEnHfEj1uQ6rOEnGfEz3d
 3dr1XV1dxLfWLjPBzmBn8AM6Hfw9P/+zqP/0RCJ2hTV+pfUfWhvuZPXPM4P1fUVn0E79O85xjnOc
 4xznOMc5znGOc5zjHOc4xznOcY5znOMc5zjHOc5xjnOc4xznOMc5znGOc5zjHOc4xznu/4P7X9ON
 1DoAYA4ACg==
-" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.6.2-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.5-1_mips.deb
 if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >>$log; else echo "extraction of $arch olsrd-plugins failed" >>$log; fi
 fi
 if [ $arch == 'mipsel' ]; then
@@ -15311,7 +15318,7 @@ kFfh5yB99kTJ8UzH8IBjg3cB3An99hSsTCi/gGhuKri9bJHjY7osElxIdNbn80/3X67Ofzm/Gvgy
 T7C8gVfqpU0Hh+UQt7eXnxkJNsDLLKTu2H99UITRD7ZeP5azfPrr03C4/sDv9sOgP5n0o6g/Cvqj
 SOZwTXJlJtWUHyPlLvasjIgfuO24fA3QHiNg22wo0U4TztyUpjSlKU1pSlOa0pSmNKUpTWlKU5rS
 lKY0pSlN0fJfak8yzwDADQA=
-" | base64 -d > $cfgusrdir/olsrd_0.9.6.2-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.5-1_mipsel.deb
 if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >>$log; else echo "extraction of $arch olsrd failed" >>$log; fi
 # base64: olsrd-plugins_0.9.5-1_mipsel.deb
 echo "
@@ -20419,7 +20426,7 @@ Yg7ocnXFzxLPA935uqJniVbc954DupTG2d/rAh32r9567fj+XjjT8wFddz1rB2q+/JNqzxLpLmnE
 5FWe/23btk3n/I860r5ps3tLu3vb1k1u4tq0Zes2N7Ft0suMs93Z7vyYTgd/y8//NOp/dCQcvMoa
 v9r6d21yb2P1zzOD9X1VZ9Dl+i+7siu7siu7siu7siu7siu7siu7siu7siu7siu7siu7siu7siu7
 siu7siu7siu7siu7siu7siu7siu7siu7/w/u/wDZTTX3AGAOAA==
-" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.6.2-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.5-1_mipsel.deb
 if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >>$log; else echo "extraction of $arch olsrd-plugins failed" >>$log; fi
 fi
 sed -i '/^#base64begin/,/^#base64end$/d' $0
@@ -20546,11 +20553,13 @@ setupv4olsrd () {
     if [[ ! -w $olsrd4config ]]; then
         cp $olsrdconfig $olsrd4config 2> /dev/null
     fi
-    #fix paths to plugins for olsrd_0.9.6.2-1
+    #fix paths to plugins for olsrd_0.9.5
     if [ -w $olsrd4config ]; then
         [ $(grep -c 'LoadPlugin "/usr/lib/olsrd/' $olsrd4config) \> 0 ] && sed -i "s/LoadPlugin \"\/usr\/lib\/olsrd\//LoadPlugin \"/g" $olsrd4config 2>>$log
-        sed -i "s/olsrd_jsoninfo.so.0.0/olsrd_jsoninfo.so.1.1/g" $olsrd4config 2>>$log
-        sed -i "s/olsrd_txtinfo.so.0.1/olsrd_txtinfo.so.1.1/g" $olsrd4config 2>>$log
+        sed -i "s/olsrd_jsoninfo.so.1.1/olsrd_jsoninfo.so.0.0/g" $olsrd4config 2>>$log
+        sed -i "s/olsrd_txtinfo.so.1.1/olsrd_txtinfo.so.0.1/g" $olsrd4config 2>>$log
+        sed -i "s/olsrd_dyn_gw.so.0.5/olsrd_dyn_gw.so.0.3/g" $olsrd4config 2>>$log
+        sed -i "s/olsrd_nameservice.so.0.4/olsrd_nameservice.so.0.3/g" $olsrd4config 2>>$log
     fi
     #add logging to /etc/init.d/olsrd
     if [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
