@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711103]
+# Version [0903k/201711104]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -139,7 +139,7 @@ load
 rm -f func.sh
 # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
 if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-    if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
+    if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
 
         if [ ! -d /config/scripts/pre-config.d ]; then
             # create missing directory
@@ -161,7 +161,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
         ebtables -P FORWARD DROP
     fi
 else
-    if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
+    if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
 
 
         sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
@@ -380,7 +380,7 @@ if [ -w $olsrd6config ]; then
     sed -i "s/olsrd_nameservice.so.0.5/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
 fi
 
-echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >> $cfgusrdir$log
+echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
 # base64: olsrd_0.9.0.3-1_mips.deb
 echo "
@@ -14505,7 +14505,7 @@ vvefq4zvvwkdQjj0Dz94rjJf/qwIRzw5Dhd8rLwdfy7qlTHMEa7HZg/w+l8l8a4J6c5BuzeV1/sB
 XP8T9F7e/0m+WJfajxrrSvHVny21U3XK9yYb3MfryuHufu5+7n7ufu5+7n7ufu5+7n7ufu5+/v58
 /j+OUZ2oAPgMAAo=
 " | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb
-if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >> $cfgusrdir$log; else echo "extraction of $arch olsrd failed" >> $cfgusrdir$log; fi
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd." >>$log; else echo "extraction of $arch olsrd failed" >>$log; fi
 # base64: olsrd-plugins_0.9.0.3-1_mipsel.deb
 echo "
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIyMSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
@@ -19288,7 +19288,7 @@ eIR7lZTuak95ul+0X/OykWxmWSI+sCyVyGai+IRbg9HukegT8UxsjX6Epzmb+jB1tMDv/vvv1+/w
 k+/68/J7WlqW33vPitByeL8iFGq5l2grVMA0r9C/r1yS30g215/RNJJJpXJ26Zzi//30f3I41v8h
 e/xD9v/y++6/l/U/A+ZS9vhH/f/R76PfR7+PfvD7v0dDy1sASA0ACg==
 " | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb
-if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >> $cfgusrdir$log; else echo "extraction of $arch olsrd-plugins failed" >> $cfgusrdir$log; fi
+if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >>$log; else echo "extraction of $arch olsrd-plugins failed" >>$log; fi
 fi
 sed -i '/^#base64begin/,/^#base64end$/d' $0
 # !dont edit or remove this comment!
@@ -19462,8 +19462,8 @@ setupv6olsrd () {
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
         sed -i 's/^MESH_IF=.*/MESH_IF=wlan0/' $olsrd6default
         sed -i "s/\$DEBUGLEVEL.*/\$DEBUGLEVEL\ -f\ $olsrd6cnfesc\"/g" $olsrd6default
-        lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
-        linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
+        lineversion=$(grep -n IpVersion  $olsrd6config 2>/dev/null | awk -F":" {'print $1;'})
+        linelq=$(grep -n LinkQualityMult $olsrd6config 2>/dev/null | head -n 1 | awk -F":" {'print $1;'})
         if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
             sed -i '/IpVersion /d'          $olsrd6config
             sed -i '/IP version to use/d'   $olsrd6config
@@ -19586,8 +19586,7 @@ load () {
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     #
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-
+        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
             if [ ! -d /config/scripts/pre-config.d ]; then
                 # create missing directory
                 mkdir /config/scripts/pre-config.d >>$log 2>>$log
@@ -19608,9 +19607,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
-
-
+        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
             sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
@@ -20125,8 +20122,7 @@ Interface "br9" {\
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 0 ]]; then
-
+        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
             if [ ! -d /config/scripts/pre-config.d ]; then
                 # create missing directory
                 mkdir /config/scripts/pre-config.d >>$log 2>>$log
@@ -20147,9 +20143,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
             ebtables -P FORWARD DROP
         fi
     else
-        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh | wc -l) == 2 ]]; then
-
-
+        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
             sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
             sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
             ebtables -P FORWARD ACCEPT
@@ -20308,7 +20302,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     fi
 
     # for debugging purposes
-    cp $INPUT /tmp/result.json
+    cp $INPUT /tmp/result.json 2>/dev/null
 
     if [ "$ret" == "99" ]; then
         echo "result already sent, so do nothing here" >/dev/null
