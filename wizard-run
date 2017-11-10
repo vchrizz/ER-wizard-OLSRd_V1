@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711102]
+# Version [0903k/201711103]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19817,7 +19817,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
 # function called when you click apply
 apply () {
     # setup script
-    olsrdsetupscript=$(jq -M -r '.olsrdsetupscript' $INPUT)
+    olsrdsetupscript=$(jq -M -r '.olsrdsetupscript' $INPUT 2>/dev/null)
     if [[ "$olsrdsetupscript" == "on" ]]; then
         if [[ ! -w $olsrdsetupscript ]]; then
             if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
@@ -19842,13 +19842,13 @@ apply () {
     #  IPv4 OLSRd APPLY function  #
     ###############################
     # enable olsrd4, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
-    olsrd4enabled=$(jq -M -r '.olsrd4enabled' $INPUT)
+    olsrd4enabled=$(jq -M -r '.olsrd4enabled' $INPUT 2>/dev/null)
     if [[ "$olsrd4enabled" == "on" ]]; then
         sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
     else
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4default
     fi
-    olsrd4runonboot=$(jq -M -r '.olsrd4runonboot' $INPUT)
+    olsrd4runonboot=$(jq -M -r '.olsrd4runonboot' $INPUT 2>/dev/null)
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
     if [[ "$olsrd4runonboot" == "on" ]]; then
         if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
@@ -19860,7 +19860,7 @@ apply () {
         fi
     fi
     # set checked interfaces, else set default interface
-    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT | grep -v br9)"
+    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -v br9)"
     if [[ ! -z $enabledv4interfaces ]]; then
         enabledv4interfaces=$(echo $enabledv4interfaces | sed 's/\ /\\\ /')
         sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv4interfaces\"/" $olsrd4default
@@ -19868,7 +19868,7 @@ apply () {
         sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd4default
     fi
 
-    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT | grep -c br9) \> 0 ]; then
+    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -c br9) \> 0 ]; then
         #interface eintragen wenn fehlt
         if [ $(grep -c "Interface \"br9\" {" $olsrd4config) -eq 0 ]; then
             linenumber=$(($(grep -n "MprCoverage" /config/user-data/olsrd4.conf | cut -d":" -f1)+1))
@@ -19885,7 +19885,7 @@ Interface "br9" {\
     # backup /etc/default/olsrd
     cp -f $olsrd4default $cfgusrdir$(basename $olsrd4default).default > /dev/null
     # set ip4broadcast
-    olsrd4ip4broadcast=$(jq -M -r '.olsrd4Ip4Broadcast' $INPUT)
+    olsrd4ip4broadcast=$(jq -M -r '.olsrd4Ip4Broadcast' $INPUT 2>/dev/null)
     sed -i "s/Ip4Broadcast.*/Ip4Broadcast\ $olsrd4ip4broadcast/" $olsrd4config
     # set v4 hna and lqmult
     origIFS=$IFS
@@ -19895,7 +19895,7 @@ Interface "br9" {\
         sed -i "/$hna/d" $olsrd4config
     done
     # hna4 add entries from input
-    olsrd4hna=$(jq -M -r '.olsrd4Hna' $INPUT)
+    olsrd4hna=$(jq -M -r '.olsrd4Hna' $INPUT 2>/dev/null)
     hna4linenr=$(grep -n "Hna4" $olsrd4config | cut -d: -f1)
     for hna in $olsrd4hna; do
         sed -i "$(($hna4linenr+2))i$hna" $olsrd4config
@@ -19905,13 +19905,13 @@ Interface "br9" {\
         sed -i "/$lqmult/d" $olsrd4config
     done
     # lqmult add entries from input
-    olsrd4lqmult=$(jq -M -r '.olsrd4LinkQualityMult' $INPUT)
+    olsrd4lqmult=$(jq -M -r '.olsrd4LinkQualityMult' $INPUT 2>/dev/null)
     lqmult4linenr=$(grep -m1 -n LinkQualityMult $olsrd4config | cut -d: -f1)
     for lqmult in $olsrd4lqmult; do
         sed -i "$(($lqmult4linenr+1))iLinkQualityMult\ $lqmult" $olsrd4config
     done
     IFS=$origIFS
-    olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT)
+    olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgtxtinfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd4config
@@ -19921,7 +19921,7 @@ Interface "br9" {\
             sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd4config
         fi
     fi
-    olsrd4plgjsoninfo=$(jq -M -r '.olsrd4plgjsoninfo' $INPUT)
+    olsrd4plgjsoninfo=$(jq -M -r '.olsrd4plgjsoninfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgjsoninfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd4config
@@ -19931,7 +19931,7 @@ Interface "br9" {\
             sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd4config
         fi
     fi
-    olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT)
+    olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plghttpinfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd4config
@@ -19943,7 +19943,7 @@ Interface "br9" {\
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4config
         fi
     fi
-    olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT)
+    olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT 2>/dev/null)
     if [[ "$olsrd4watchdog" == "on" ]]; then
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) -eq 0 ]; then
             echo '#LoadPlugin "olsrd_watchdog.so.0.1"
@@ -19989,13 +19989,13 @@ Interface "br9" {\
     #  IPv6 OLSRd APPLY function  #
     ###############################
     # enable olsrd6, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
-    olsrd6enabled=$(jq -M -r '.olsrd6enabled' $INPUT)
+    olsrd6enabled=$(jq -M -r '.olsrd6enabled' $INPUT 2>/dev/null)
     if [[ "$olsrd6enabled" == "on" ]]; then
         sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
     else
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
     fi
-    olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT)
+    olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT 2>/dev/null)
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
     if [[ "$olsrd6runonboot" == "on" ]]; then
         if [[ ! -e /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
@@ -20007,7 +20007,7 @@ Interface "br9" {\
         fi
     fi
     # set checked interfaces, else set default interface
-    enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT)"
+    enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT 2>/dev/null)"
     if [[ ! -z $enabledv6interfaces ]]; then
         enabledv6interfaces=$(echo $enabledv6interfaces | sed 's/\ /\\\ /')
         sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv6interfaces\"/" $olsrd6default
@@ -20024,7 +20024,7 @@ Interface "br9" {\
         sed -i "/$hna/d" $olsrd6config
     done
     # hna6 add entries from input
-    olsrd6hna=$(jq -M -r '.olsrd6Hna' $INPUT)
+    olsrd6hna=$(jq -M -r '.olsrd6Hna' $INPUT 2>/dev/null)
     hna6linenr=$(grep -n "Hna6" $olsrd6config | cut -d: -f1)
     for hna in $olsrd6hna; do
         sed -i "$(($hna6linenr+2))i$hna" $olsrd6config
@@ -20034,13 +20034,13 @@ Interface "br9" {\
         sed -i "/$lqmult/d" $olsrd6config
     done
     # lqmult add entries from input
-    olsrd6lqmult=$(jq -M -r '.olsrd6LinkQualityMult' $INPUT)
+    olsrd6lqmult=$(jq -M -r '.olsrd6LinkQualityMult' $INPUT 2>/dev/null)
     lqmult6linenr=$(grep -m1 -n LinkQualityMult $olsrd6config | cut -d: -f1)
     for lqmult in $olsrd6lqmult; do
         sed -i "$(($lqmult6linenr+1))iLinkQualityMult\ $lqmult" $olsrd6config
     done
     IFS=$origIFS
-    olsrd6plgtxtinfo=$(jq -M -r '.olsrd6plgtxtinfo' $INPUT)
+    olsrd6plgtxtinfo=$(jq -M -r '.olsrd6plgtxtinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd6plgtxtinfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd6config
@@ -20052,7 +20052,7 @@ Interface "br9" {\
             sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd6config
         fi
     fi
-    olsrd6plgjsoninfo=$(jq -M -r '.olsrd6plgjsoninfo' $INPUT)
+    olsrd6plgjsoninfo=$(jq -M -r '.olsrd6plgjsoninfo' $INPUT 2>/dev/null)
     if [[ "$olsrd6plgjsoninfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd6config
@@ -20064,7 +20064,7 @@ Interface "br9" {\
             sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd6config
         fi
     fi
-    olsrd6plghttpinfo=$(jq -M -r '.olsrd6plghttpinfo' $INPUT)
+    olsrd6plghttpinfo=$(jq -M -r '.olsrd6plghttpinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd6plghttpinfo" == "on" ]]; then
         if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) == \#* ]]; then
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd6config
@@ -20081,15 +20081,15 @@ Interface "br9" {\
     #
     # set emission intervals
     #
-    Pollrate="$(jq -M -r '.olsrdsettings[] | .Pollrate' $INPUT)"
-    HelloValidityTime="$(jq -M -r '.olsrdsettings[] | .HelloValidityTime' $INPUT)"
-    HelloInterval="$(jq -M -r '.olsrdsettings[] | .HelloInterval' $INPUT)"
-    TcValidityTime="$(jq -M -r '.olsrdsettings[] | .TcValidityTime' $INPUT)"
-    TcInterval="$(jq -M -r '.olsrdsettings[] | .TcInterval' $INPUT)"
-    MidValidityTime="$(jq -M -r '.olsrdsettings[] | .MidValidityTime' $INPUT)"
-    MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT)"
-    HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT)"
-    HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT)"
+    Pollrate="$(jq -M -r '.olsrdsettings[] | .Pollrate' $INPUT 2>/dev/null)"
+    HelloValidityTime="$(jq -M -r '.olsrdsettings[] | .HelloValidityTime' $INPUT 2>/dev/null)"
+    HelloInterval="$(jq -M -r '.olsrdsettings[] | .HelloInterval' $INPUT 2>/dev/null)"
+    TcValidityTime="$(jq -M -r '.olsrdsettings[] | .TcValidityTime' $INPUT 2>/dev/null)"
+    TcInterval="$(jq -M -r '.olsrdsettings[] | .TcInterval' $INPUT 2>/dev/null)"
+    MidValidityTime="$(jq -M -r '.olsrdsettings[] | .MidValidityTime' $INPUT 2>/dev/null)"
+    MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT 2>/dev/null)"
+    HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT 2>/dev/null)"
+    HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT 2>/dev/null)"
 
     [ "$Pollrate" == "null" ] && Pollrate="0.1"
     [ "$HelloInterval" == "null" ] && HelloInterval="5.0"
@@ -20159,7 +20159,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     ####### wizard manual update from github
     # update wizard from github
     # load actual sources (ignoring releases)
-    updatefromgithub=$(jq -M -r '.updatefromgithub' $INPUT)
+    updatefromgithub=$(jq -M -r '.updatefromgithub' $INPUT 2>/dev/null)
     olsrdwizard=""
     for i in $(find /config/wizard/feature/ -name wizard.html | grep -i olsr); do
         if [[ $(head $i -n 10 | grep 'OLSRd_V1') ]]; then
@@ -20192,7 +20192,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
             echo "EdgeMAX OLSRd_V1 Wizard stopped $(date +%Y-%m-%d/%H:%M:%S.%N) - Session="$$ >>$log
         fi
     fi
-    autoupdatefromgithub=$(jq -M -r '.autoupdatefromgithub' $INPUT)
+    autoupdatefromgithub=$(jq -M -r '.autoupdatefromgithub' $INPUT 2>/dev/null)
     if [[ "$autoupdatefromgithub" == "on" ]]; then
         #check for auto-update wizard, install if not there!!
         wiz=""
@@ -20264,8 +20264,8 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     # end
     ####### wizard manual update from github
 
-    olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT)
-    olsrdrestart6now=$(jq -M -r '.olsrdrestart6now' $INPUT)
+    olsrdrestartnow=$(jq -M -r '.olsrdrestartnow' $INPUT 2>/dev/null)
+    olsrdrestart6now=$(jq -M -r '.olsrdrestart6now' $INPUT 2>/dev/null)
     if [[ "$olsrdrestartnow" == "on" ]]; then
         # fix the pid-file to match the process id running in order to mark init.d#restart work properly
         running=$(ps aux | grep olsrd4 | grep -v grep | awk '{print $2'}) 2>/dev/null
