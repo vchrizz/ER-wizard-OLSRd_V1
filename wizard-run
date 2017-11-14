@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711104]
+# Version [0903k/201711140]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19443,6 +19443,23 @@ UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
         sed     -i $linenumber'i\
         [ -w /tmp/olsrd.watchdog.compare ] && rm -f /tmp/olsrd.watchdog.compare 2>/dev/null\
         [ -w /tmp/olsrd.watchdog ] && rm -f /tmp/olsrd.watchdog 2>/dev/null' $olsrd4init
+    fi
+    #add cronjob handling to /etc/init.d/olsrd
+    if [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init) -eq 0 ]; then
+        ## add stop watchdog cronjob
+        linenumber=$(($(grep -n 'start-stop-daemon --stop  --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+0))
+        sed     -i $linenumber'i\
+        [ -f /etc/cron.d/olsrdwatchdog ] && rm /etc/cron.d/olsrdwatchdog 2>/dev/null' $olsrd4init
+        ## add start watchdog cronjob
+        linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
+        sed     -i $linenumber'i\
+        if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
+           [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&\
+           [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&\
+           [ -x /etc/olsrdwatchdog ] ; then\
+          echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
+          chmod 744 /etc/cron.d/olsrdwatchdog\
+        fi' $olsrd4init
     fi
 }
 # function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
