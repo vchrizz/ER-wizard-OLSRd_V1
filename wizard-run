@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711220]
+# Version [0903k/201711221]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19330,6 +19330,21 @@ onlinecheck () {
     fi
 }
 
+function valid_ip() {
+    local  ip=$1
+    local  stat=1
+    if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
+        OIFS=$IFS
+        IFS='.'
+        ip=($ip)
+        IFS=$OIFS
+        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
+            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
+        stat=$?
+    fi
+    return $stat
+}
+
 # function to download (if not found in $cfgusrdir) and install olsrd
 installolsrd () {
     version_latest_ondisk=$(ls /config/user-data/olsrd_*_${arch}.deb | cut -d_ -f2 | sort -r | head -1)
@@ -19900,6 +19915,8 @@ Interface "br9" {\
     cp -f $olsrd4default $cfgusrdir$(basename $olsrd4default).default > /dev/null
     # set ip4broadcast
     olsrd4ip4broadcast=$(jq -M -r '.olsrd4Ip4Broadcast' $INPUT 2>/dev/null)
+    #ensure a valid value for ip4broadcast
+    valid_ip "$olsrd4ip4broadcast" || olsrd4ip4broadcast='255.255.255.255';
     sed -i "s/Ip4Broadcast.*/Ip4Broadcast\ $olsrd4ip4broadcast/" $olsrd4config
     # set v4 hna and lqmult
     origIFS=$IFS
@@ -19912,6 +19929,11 @@ Interface "br9" {\
     olsrd4hna=$(jq -M -r '.olsrd4Hna' $INPUT 2>/dev/null)
     hna4linenr=$(grep -n "Hna4" $olsrd4config | cut -d: -f1)
     for hna in $olsrd4hna; do
+        #ensure that entered values wont kill our olsrd - ignore hnas with wring IP or netmask
+        ip=$(echo $hna | cut -d" " -f1)
+        valid_ip "$ip" || continue;
+        mask=$(echo $hna | cut -d" " -f2)
+        valid_ip "$mask" || continue;
         sed -i "$(($hna4linenr+2))i$hna" $olsrd4config
     done
     # lqmult remove all entries in config
@@ -19922,6 +19944,12 @@ Interface "br9" {\
     olsrd4lqmult=$(jq -M -r '.olsrd4LinkQualityMult' $INPUT 2>/dev/null)
     lqmult4linenr=$(grep -m1 -n LinkQualityMult $olsrd4config | cut -d: -f1)
     for lqmult in $olsrd4lqmult; do
+        #ensure that entered values wont kill our olsrd - ignore wring IPs and LQ-values out of range: 0.01 to 0.99
+        ip=$(echo $lqmult | cut -d" " -f1)
+        valid_ip "$ip" || continue;
+        mult=$(echo $lqmult | cut -d" " -f2)
+        [[ "$mult" =~ ^[0-9]+(\.[0-9]+)?$ ]] || continue;
+        [ $(printf "$mult\n1\n" | sort -g | tail -1) -eq 1 ] || continue;
         sed -i "$(($lqmult4linenr+1))iLinkQualityMult\ $lqmult" $olsrd4config
     done
     IFS=$origIFS
