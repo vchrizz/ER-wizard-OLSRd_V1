@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711140]
+# Version [0903k/201711220]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -20214,10 +20214,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
             fi
         done
         if [ ! $wiz ]; then 
-            #autoupdate-wizard mit scripten fehlt, installieren - offline-install???
-            git2owner="pocki80"
-            git2repo="ER-wizard-AutoUpdate"
-            git2branch="master"
+            #autoupdate-wizard mit scripten fehlt: offline-install
             wiz="/config/wizard/feature/AutoUpdate/wizard.html"
             echo "Installing "$(dirname $wiz)"..." >>$log 2>>$log
             if [ ! -d $(dirname $wiz) ]; then 
@@ -20225,7 +20222,60 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
                 chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
                 chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
             fi
-            curl -sL -o /tmp/ER-wizard.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$git2owner/$git2repo/tarball >>$log 2>>$log
+            #extract offline --> replaces download-procedure, Version 20171122, https://github.com/pocki80/ER-wizard-AutoUpdate
+            echo "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
+" | base64 -d >/tmp/ER-wizard.tar.gz 2>>$log
             tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
             while read LINE; do
