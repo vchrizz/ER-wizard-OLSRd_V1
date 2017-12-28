@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711221]
+# Version [0903k/201711280]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -379,6 +379,46 @@ if [ -w $olsrd6config ]; then
     sed -i "s/olsrd_nameservice.so.0.4/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
     sed -i "s/olsrd_nameservice.so.0.5/olsrd_nameservice.so.0.3/g" $olsrd6config 2>>$log
 fi
+
+
+#############################################################################
+##     patch for installing this wizard onto a existing 0.9.0.3 wizard     ##
+## remove this block upon including a never version of olsrd after 0.9.0.3 ##
+#add logging to /etc/init.d/olsrd
+if [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
+    echo "Add logging to /etc/init.d/olsrd" >>$log
+    linenumber=$(($(grep -n "PID_FILE=/var/run" $olsrd4init | cut -d":" -f1)+1))
+    sed     -i $linenumber'i\
+LOG="/tmp/olsrd.log"\
+UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
+    linenumber=$(($(grep -n 'echo -n "Starting $DESC: "' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+    sed     -i $linenumber'i\
+    echo $(date)": starting olsrd - "$UG >>$LOG' $olsrd4init
+    linenumber=$(($(grep -n 'echo -n "Stopping $DESC: "' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+    sed     -i $linenumber'i\
+    echo $(date)": stopping olsrd - "$UG >>$LOG' $olsrd4init
+    linenumber=$(($(grep -n 'rm -f $PID_FILE' $olsrd4init | tail -n1 | cut -d":" -f1)+1))
+    sed     -i $linenumber'i\
+    [ -w /tmp/olsrd.watchdog.compare ] && rm -f /tmp/olsrd.watchdog.compare 2>/dev/null\
+    [ -w /tmp/olsrd.watchdog ] && rm -f /tmp/olsrd.watchdog 2>/dev/null' $olsrd4init
+fi
+#add cronjob handling to /etc/init.d/olsrd
+if [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init) -eq 0 ]; then
+    linenumber=$(($(grep -n 'start-stop-daemon --stop  --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+0))
+    sed     -i $linenumber'i\
+    [ -f /etc/cron.d/olsrdwatchdog ] && rm /etc/cron.d/olsrdwatchdog 2>/dev/null' $olsrd4init
+    linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
+    sed     -i $linenumber'i\
+    if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
+       [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&\
+       [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&\
+       [ -x /etc/olsrdwatchdog ] ; then\
+      echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
+      chmod 744 /etc/cron.d/olsrdwatchdog\
+    fi' $olsrd4init
+fi
+## END patch for installing this wizard onto a existing 0.9.0.3 wizard END ##
+#############################################################################
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
