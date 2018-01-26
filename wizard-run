@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201711280]
+# Version [0903k/201801260]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -213,6 +213,8 @@ if [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog)
   if [ "$comp" ] && [ "$wd" ] && [ $(($comp -10)) \> $(($wd)) ];then
     ot=`stat -c %y /tmp/olsrd.watchdog.compare`
     echo $(date)": olsrd crashed/freezed (at "$(date -d @$wd)"), restarting... - "$UG >>$LOG
+    ps aux        >"/tmp/"$(date '+%Y%m%d-%H%M%S')"-processes"
+    /sbin/ip -4 r >"/tmp/"$(date '+%Y%m%d-%H%M%S')"-routesv4"
     /etc/init.d/olsrd restart
   fi
 fi
