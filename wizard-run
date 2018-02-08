@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201801260]
+# Version [0903k/201801261]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19931,7 +19931,7 @@ apply () {
         fi
     fi
     # set checked interfaces, else set default interface
-    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -v br9)"
+    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -vw br9)"
     if [[ ! -z $enabledv4interfaces ]]; then
         enabledv4interfaces=$(echo $enabledv4interfaces | sed 's/\ /\\\ /')
         sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv4interfaces\"/" $olsrd4default
@@ -19939,7 +19939,7 @@ apply () {
         sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd4default
     fi
 
-    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -c br9) \> 0 ]; then
+    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -cw br9) \> 0 ]; then
         #interface eintragen wenn fehlt
         if [ $(grep -c "Interface \"br9\" {" $olsrd4config) -eq 0 ]; then
             linenumber=$(($(grep -n "MprCoverage" /config/user-data/olsrd4.conf | cut -d":" -f1)+1))
