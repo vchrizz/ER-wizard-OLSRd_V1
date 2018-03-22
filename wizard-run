@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201801261]
+# Version [0903k/201803220]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -122,6 +122,7 @@ if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
 else
     arch='mipsel'
 fi
+echo "Running olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 # both packages, olsrd *and* olsrd-plugins are required and must be specified!
 # german debian mirror
 olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
@@ -191,6 +192,7 @@ fi
 # restart daemon(s)
 $olsrd4init restart >>$log
 $olsrd6init restart >>$log
+echo "Finished olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 exit 0
 ENDSCRIPTCONTENT
 }
@@ -200,7 +202,7 @@ writewatchdogscript () {
     echo "installing /etc/olsrdwatchdog" >>$log
     cat >$olsrdwatchdogscriptfile <<'ENDSCRIPTCONTENT'
 #!/bin/bash
-#init.d script of oslr creates/deletes the compare file to enable/disable this watchdog
+#init.d script of olsrd creates/deletes the compare file to enable/disable this watchdog
 olsrd4config="/config/user-data/olsrd4.conf"
 LOG="/tmp/olsrd.log"
 UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")
@@ -232,6 +234,8 @@ ENDSCRIPTCONTENT
 # here are the required packages for mips and mipsel in base64 format.
 # they will be extracted into $cfgusrdir at first run of this script.
 #
+
+echo "Starting Wizard-Installation Block ... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 
 # migrate logfile to new location
 if [ -f olsrd-install.log ]; then
@@ -19332,6 +19336,9 @@ e/xD9v/y++6/l/U/A+ZS9vhH/f/R76PfR7+PfvD7v0dDy1sASA0ACg==
 " | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb
 if [[ $? == 0 ]]; then echo "extracted $arch olsrd-plugins." >>$log; else echo "extraction of $arch olsrd-plugins failed" >>$log; fi
 fi
+
+echo "Finished Wizard-Installation Block ... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
+
 sed -i '/^#base64begin/,/^#base64end$/d' $0
 # !dont edit or remove this comment!
 #base64end
@@ -19389,6 +19396,7 @@ function valid_ip() {
 
 # function to download (if not found in $cfgusrdir) and install olsrd
 installolsrd () {
+    echo "Running installolsrd() procedure... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
     version_latest_ondisk=$(ls /config/user-data/olsrd_*_${arch}.deb | cut -d_ -f2 | sort -r | head -1)
     if [ -n ${version_latest_ondisk} ]; then
         ver=${version_latest_ondisk}
@@ -19457,6 +19465,7 @@ installolsrd () {
 }
 
 setupv4olsrd () {
+    echo "Running setupv4olsrd() procedure... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
     if [[ -w $cfgusrdir$(basename $olsrd4default).default ]]; then
         cp -f $cfgusrdir$(basename $olsrd4default).default $olsrd4default 2> /dev/null
     fi
@@ -19523,6 +19532,7 @@ UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
 # because olsrd runs only in ipv4 *OR* ipv6 mode
 # (olsrd2 is able to run v4 and v6 in one instance)
 setupv6olsrd () {
+    echo "Running setupv6olsrd() procedure... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
     if [[ -w $cfgusrdir$(basename $olsrd6default).default ]]; then
         cp -f $cfgusrdir$(basename $olsrd6default).default $olsrd6default 2> /dev/null
         defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
