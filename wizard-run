@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201803220]
+# Version [0903k/201806130]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -98,9 +98,7 @@ if [ ! $olsrdv1wizard ]; then
     exit
 fi
 cfgusrdir="/config/user-data/"
-# olsrd installation logfile
 log="/var/log/0xffolsrd.log"
-# default olsrd configuration files
 olsrdconfig='/etc/olsrd/olsrd.conf'
 olsrd4init='/etc/init.d/olsrd'
 olsrd4default='/etc/default/olsrd'
@@ -108,23 +106,18 @@ olsrd4bin='/usr/sbin/olsrd'
 olsrd6init='/etc/init.d/olsrd6'
 olsrd6default='/etc/default/olsrd6'
 olsrd6bin='/usr/sbin/olsrd6'
-# user-defined olsrd configuration files
 olsrd4config="${cfgusrdir}olsrd4.conf"
 olsrd6config="${cfgusrdir}olsrd6.conf"
-# hosts to check for online status
 v4iphost='8.8.8.8'
 v4dnshost='www.google.com'
 v6iphost='2001:4860:4860::8888'
 v6dnshost='www.google.com'
-# check what architecture we are working on. ER big endian (mips) or ER-X little endian (mipsel)
 if [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ]; then
     arch='mips'
 else
     arch='mipsel'
 fi
 echo "Running olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
-# both packages, olsrd *and* olsrd-plugins are required and must be specified!
-# german debian mirror
 olsrdmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd_0.6.6.2-1_$arch.deb"
 olsrdplgmirror="http://ftp.de.debian.org/debian/pool/main/o/olsrd/olsrd-plugins_0.6.6.2-1_$arch.deb"
 olsrdwatchdogscriptfile="/etc/olsrdwatchdog"
@@ -138,22 +131,17 @@ sed -n "/^load ()/,/^}/p" $olsrdv1wizard >> func.sh
 source func.sh
 load
 rm -f func.sh
-# if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
 if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
     if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
-
         if [ ! -d /config/scripts/pre-config.d ]; then
-            # create missing directory
             mkdir /config/scripts/pre-config.d >>$log 2>>$log
             chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
             chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
         fi
         if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-            #create file
             echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
             chmod 755 /config/scripts/pre-config.d/ebtables.sh
         else
-            #add lines to file on top
             linenumber=2
             sed -i $linenumber'i\
 #olsrdwizard: dont forward ethernet frames between bridge ports\
@@ -163,14 +151,11 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     fi
 else
     if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
-
-
         sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
         sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
         ebtables -P FORWARD ACCEPT
     fi
 fi
-#add cronjob? if missing, olsrd-autostart=on, executeable watchdogscript 
 if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
    [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
    [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
@@ -179,7 +164,6 @@ if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
   echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
   chmod 744 /etc/cron.d/olsrdwatchdog
 fi
-#need to remove cronjob?
 if [ ! -f $olsrd4default ] || 
    [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") -eq 0 ] ||
    [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
@@ -189,7 +173,6 @@ if [ ! -f $olsrd4default ] ||
       rm /etc/cron.d/olsrdwatchdog
    fi
 fi
-# restart daemon(s)
 $olsrd4init restart >>$log
 $olsrd6init restart >>$log
 echo "Finished olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
