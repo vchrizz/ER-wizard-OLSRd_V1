@@ -6,6 +6,7 @@ branch to prepare new release including 0.9.7
 what to work on:
 * new olsrd packages
 * fix paths to plugins (dynamically?)
+* improve handling of bridges with ebtables! only block what is really needed (i.e. use --logical-in)
 * tune default parameters of info-plugins (especialle httpinfo plugin allowed hosts/subnets)
 * write a config migration script to move from "old" config style to "new" without dead freight
 * new etc-init.d scripts including logging and watchdog handling
