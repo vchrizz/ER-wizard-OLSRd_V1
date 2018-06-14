@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201806130]
+# Version [0903p/201806140]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -73,7 +73,7 @@ olsrdwatchdogscriptfile="/etc/olsrdwatchdog"
 #define update sources on github
 gitowner="vchrizz"
 gitrepo="ER-wizard-OLSRd_V1"
-gitbranch="master"
+gitbranch="prepare-097"
 
 #
 # DO NOT EDIT BELOW HERE !
