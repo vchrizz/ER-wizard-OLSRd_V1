@@ -22,3 +22,4 @@ what to work on:
 * UI: configure "main ip" for routers having multiple public IPs
 * establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
 * get rid of old code and patches, that are no longer needed.
+* save important data to "custom-attributes" in EdgeOS configuration?
