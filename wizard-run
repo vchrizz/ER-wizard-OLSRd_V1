@@ -77,6 +77,7 @@ if [ ! $olsrdv1wizard ]; then
     exit
 fi
 echo '#!/bin/bash' >func.sh
+sed -n "/^mask_to_prefix ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
@@ -182,7 +183,7 @@ sed -i '/^#base64begin/,/^#base64end$/d' $0
 # !dont edit or remove this comment!
 #base64end
 
-function valid_ip() {
+function valid_ip () {
     local  ip=$1
     local  stat=1
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
@@ -197,7 +198,7 @@ function valid_ip() {
     return $stat
 }
 
-function mask_to_prefix() {
+function mask_to_prefix () {
   case "$1" in 
     "255.255.255.255") echo "32";;
     "255.255.255.254") echo "31";;
@@ -236,7 +237,7 @@ function mask_to_prefix() {
   esac
 }
 
-function prefix_to_mask() {
+function prefix_to_mask () {
   case "$1" in 
     "32") echo "255.255.255.255";;
     "31") echo "255.255.255.254";;
@@ -320,18 +321,6 @@ installolsrd () {
         #install using force-overwrite
         dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
         statusolsrd=$?
-        ####PATCH TEMPORARY####
-             #replair olsrd-watchdog file
-             [ -f /etc/olsrdwatchdog ] && [ ! -f /etc/olsrd/watchdog ] &&  mv /etc/olsrdwatchdog /etc/olsrd/watchdog && chmod 755 /etc/olsrd/watchdog || rm /etc/olsrdwatchdog 2>/dev/null
-             #fix paths on /etc/init.d/olsrd
-             sed -i 's/\/etc\/olsrdwatchdog/\/etc\/olsrd\/watchdog/g' /etc/init.d/olsrd
-             sed -i 's/\/config\/user-data\/olsrd4\.conf/\/config\/olsrd\/olsrd4\.conf/g' /etc/init.d/olsrd
-             #fix paths on /etc/olsrd/watchdog
-             sed -i 's/\/config\/user-data\/olsrd4\.conf/\/config\/olsrd\/olsrd4\.conf/g' /etc/olsrd/watchdog
-             #fix on /etc/init.d/olsrd
-             sed -i 's/\> 0 \]/\\\> 0 \]/g' /etc/init.d/olsrd
-             # 
-        ####PATCH END####
         if [[ $statusolsrd == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >>$log
             return 0
@@ -553,7 +542,7 @@ load () {
         mask=$(mask_to_prefix $(echo $line | cut -d "-" -f 2))
         hna4list=$hna4list'{"hna4address":"'$ip'/'$mask'"},'
     done
-    [ "$hna4list" ] && hna4list='"hna4list":['${hna4list%","}'],' || hna4list=','
+    [ "$hna4list" ] && hna4list='"hna4list":['${hna4list%","}'],' || hna4list=''
 
     lq4list=''
     for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -i linkqualitymult | grep -vi default |awk '{print $2"-"$3}'); do
@@ -561,7 +550,7 @@ load () {
         value=$(echo $line | cut -d "-" -f 2)
         lq4list=$lq4list'{"lq4address":"'$ip'","lq4value":"'$value'"},'
     done
-    [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=','
+    [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=''
 
     
     ## OLSRD6 missing here!
