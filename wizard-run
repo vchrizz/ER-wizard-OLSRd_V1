@@ -84,8 +84,8 @@ sed -n "/^load ()/,/^}/p" $olsrdv1wizard >>func.sh
 source func.sh
 load >>$log
 rm -f func.sh 
-$olsrd4init restart >>$log
-$olsrd6init restart >>$log
+/etc/init.d/olsrd restart >>$log 2>>$log
+/etc/init.d/olsrd6 restart >>$log 2>>$log
 echo "Finished olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 exit 0
 ENDSCRIPTCONTENT
@@ -239,7 +239,7 @@ installolsrd () {
         fi
         #
         #install using force-overwrite
-        dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>&1
+        dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
         statusolsrd=$?
         ####PATCH TEMPORARY####
              #replair olsrd-watchdog file
