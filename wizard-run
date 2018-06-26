@@ -434,17 +434,17 @@ load () {
     dpkg -l olsrd olsrd-plugins >>$log 2>>$log
     if [[ $? != 0 ]]; then
         echo "olsrd packages not installed! need to install packages." >>$log
-        installolsrd
+        installolsrd >>$log 2>>$log
         if [[ $? == 0 ]]; then
-            setupv4olsrd
-            setupv6olsrd
+            setupv4olsrd >>$log 2>>$log
+            setupv6olsrd >>$log 2>>$log
             echo "olsrd packages installed and configured. all done." >>$log
             olsrdpkgstatus="\"pkgstatus\":\"success: running olsrd installation ... completed.\""
         else
             olsrdpkgstatus="\"pkgstatus\":\"error: not installed, download or install problem. check $log\""
         fi
     else
-        echo "olsrd packages already installed! checking for new version on disk..." >>$log
+        echo "olsrd packages already installed! checking for new version on disk $(date +%Y-%m-%d/%H:%M:%S.%N)..." >>$log
         # check if latest version is installed from packages available in $cfgusrdir
         version_installed=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
         version_latest_ondisk=$(ls /config/user-data/olsrd_* | cut -d_ -f2 | sort -r | head -1)
@@ -452,10 +452,10 @@ load () {
         function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
         if [ "$(version "${version_latest_ondisk:0:5}")" -gt "$(version "${version_installed:0:5}")" ]; then
             echo "new olsrd packages found, trying to install packages." >>$log
-            installolsrd
+            installolsrd >>$log 2>>$log
             if [[ $? == 0 ]]; then
-                setupv4olsrd
-                setupv6olsrd
+                setupv4olsrd >>$log 2>>$log
+                setupv6olsrd >>$log 2>>$log
                 echo "olsrd packages installed and configured. done." >>$log
             fi
         else
@@ -463,7 +463,7 @@ load () {
         fi
         olsrdver=$(dpkg -l olsrd | awk '/ii/ { print $3 }')
         olsrdplgver=$(dpkg -l olsrd-plugins | awk '/ii/ { print $3 }')
-        echo "latest available olsrd installed and configured. all done." >>$log
+        echo "latest available olsrd installed and configured. all done. $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
         olsrdpkgstatus="\"pkgstatus\":\"success: packages olsrd $olsrdver and olsrd-plugins $olsrdplgver installed.\""
     fi
 
