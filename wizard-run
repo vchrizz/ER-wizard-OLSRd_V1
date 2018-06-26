@@ -24,6 +24,8 @@ cfgusrdir="/config/user-data/"
 olsrddir="/config/olsrd/"
 olsrd4conf="${olsrddir}olsrd4.conf"
 olsrd4def="${olsrddir}olsrd4default"
+olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
+
 # default olsrd configuration files
 olsrdconfig='/etc/olsrd/olsrd.conf'
 olsrd4init='/etc/init.d/olsrd'
@@ -237,14 +239,19 @@ installolsrd () {
         fi
         #
         #install using force-overwrite
-        dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log
+        dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>&1
         statusolsrd=$?
         ####PATCH TEMPORARY####
-         #replair olsrd-watchdog file
-         [ -f /etc/olsrdwatchdog ] && [ ! -f /etc/olsrd/watchdog ] &&  mv /etc/olsrdwatchdog /etc/olsrd/watchdog && chmod 755 /etc/olsrd/watchdog || rm /etc/olsrdwatchdog 2>/dev/null
-         #fix paths on /etc/init.d/olsrd
-         sed -i 's/\/etc\/olsrdwatchdog/\/etc\/olsrd\/watchdog/g' /etc/init.d/olsrd
-         sed -i 's/\/config\/user-data\/olsrd4\.conf/\/config\/olsrd\/olsrd4\.conf/g' /etc/init.d/olsrd
+             #replair olsrd-watchdog file
+             [ -f /etc/olsrdwatchdog ] && [ ! -f /etc/olsrd/watchdog ] &&  mv /etc/olsrdwatchdog /etc/olsrd/watchdog && chmod 755 /etc/olsrd/watchdog || rm /etc/olsrdwatchdog 2>/dev/null
+             #fix paths on /etc/init.d/olsrd
+             sed -i 's/\/etc\/olsrdwatchdog/\/etc\/olsrd\/watchdog/g' /etc/init.d/olsrd
+             sed -i 's/\/config\/user-data\/olsrd4\.conf/\/config\/olsrd\/olsrd4\.conf/g' /etc/init.d/olsrd
+             #fix paths on /etc/olsrd/watchdog
+             sed -i 's/\/config\/user-data\/olsrd4\.conf/\/config\/olsrd\/olsrd4\.conf/g' /etc/olsrd/watchdog
+             #fix on /etc/init.d/olsrd
+             sed -i 's/\> 0 \]/\\\> 0 \]/g' /etc/init.d/olsrd
+             # 
         ####PATCH END####
         if [[ $statusolsrd == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >>$log
