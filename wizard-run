@@ -197,6 +197,85 @@ function valid_ip() {
     return $stat
 }
 
+function mask_to_prefix() {
+  case "$1" in 
+    "255.255.255.255") echo "32";;
+    "255.255.255.254") echo "31";;
+    "255.255.255.252") echo "30";;
+    "255.255.255.248") echo "29";;
+    "255.255.255.240") echo "28";;
+    "255.255.255.224") echo "27";;
+    "255.255.255.192") echo "26";;
+    "255.255.255.128") echo "25";;
+    "255.255.255.0")   echo "24";;
+    "255.255.254.0")   echo "23";;
+    "255.255.252.0")   echo "22";;
+    "255.255.248.0")   echo "21";;
+    "255.255.240.0")   echo "20";;
+    "255.255.224.0")   echo "19";;
+    "255.255.192.0")   echo "18";;
+    "255.255.128.0")   echo "17";;
+    "255.255.0.0")     echo "16";;
+    "255.254.0.0")     echo "15";;
+    "255.252.0.0")     echo "14";;
+    "255.248.0.0")     echo "13";;
+    "255.240.0.0")     echo "12";;
+    "255.224.0.0")     echo "11";;
+    "255.192.0.0")     echo "10";;
+    "255.128.0.0")     echo "9";;
+    "255.0.0.0")       echo "8";;
+    "254.0.0.0")       echo "7";;
+    "252.0.0.0")       echo "6";;
+    "248.0.0.0")       echo "5";;
+    "240.0.0.0")       echo "4";;
+    "224.0.0.0")       echo "3";;
+    "192.0.0.0")       echo "2";;
+    "128.0.0.0")       echo "1";;
+    "0.0.0.0")       echo "0";;
+    *) echo "32";;
+  esac
+}
+
+function prefix_to_mask() {
+  case "$1" in 
+    "32") echo "255.255.255.255";;
+    "31") echo "255.255.255.254";;
+    "30") echo "255.255.255.252";;
+    "29") echo "255.255.255.248";;
+    "28") echo "255.255.255.240";;
+    "27") echo "255.255.255.224";;
+    "26") echo "255.255.255.192";;
+    "25") echo "255.255.255.128";;
+    "24") echo "255.255.255.0";;
+    "23") echo "255.255.254.0";;
+    "22") echo "255.255.252.0";;
+    "21") echo "255.255.248.0";;
+    "20") echo "255.255.240.0";;
+    "19") echo "255.255.224.0";;
+    "18") echo "255.255.192.0";;
+    "17") echo "255.255.128.0";;
+    "16") echo "255.255.0.0";;
+    "15") echo "255.254.0.0";;
+    "14") echo "255.252.0.0";;
+    "13") echo "255.248.0.0";;
+    "12") echo "255.240.0.0";;
+    "11") echo "255.224.0.0";;
+    "10") echo "255.192.0.0";;
+    "9") echo "255.128.0.0";;
+    "8") echo "255.0.0.0";;
+    "7") echo "254.0.0.0";;
+    "6") echo "252.0.0.0";;
+    "5") echo "248.0.0.0";;
+    "4") echo "240.0.0.0";;
+    "3") echo "224.0.0.0";;
+    "2") echo "192.0.0.0";;
+    "1") echo "128.0.0.0";;
+    "0") echo "0.0.0.0";;
+    *) echo "255.255.255.255";;
+  esac
+}
+
+
 installolsrd () {
     #mips or mipsel?
     [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ] && arch='mips' || arch='mipsel'
@@ -325,30 +404,27 @@ setupv4olsrd () {
         [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##"
         [ "$startonboot" -eq 1 ] && sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' /etc/default/olsrd || sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' etc/default/olsrd
         #
-        ############ IMPLEMENT
-        #plugins and pluginparameters, watchdog!?
+        #plugins and pluginparameters
         plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
-            file=$(ls -1 /usr/lib/olsrd/$plugin* | tail -1 | cut -d '/' -f5)
-            echo "## $plugin ## Filename $file"
-            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' | grep -i plparam | awk '{gsub("\"","",$0); print "  "$2"="$3}'
-            #plugin part of config?
-            # NO-> append
-            # YES->un-comment, remove PlParams, insert PlParams
+            file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+            [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
+            echo "## $plugin ## Filename $file" >>$log
+            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
+            #first delete pluginblock, then append old block with current files
+            sed -i '/^[# \t]*loadplugin[ \t]\+"'$plugin'/I,/}/ d' $olsrd4conf 2>>$log
+            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' /config/user-data/olsrd4.conf 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd4conf 2>>$log
           done
         fi
-        #
-        ############ IMPLEMENT
-        #setupscript
-        [ -x /config/scripts/post-config.d/olsrd_setup.sh ] && echo "## setupscript-on ##"
-        # write new setup-script -> copy to post-config.d or to /config/olsrd
         #
         #migration done, now avoid to do that again
         #move old files to .bak
         mv /config/user-data/olsrd.default /config/user-data/olsrd.default.bak
         mv $conffile /config/user-data/olsrd4.bak
     fi
+    #trim tailing blanks/tabs
+    sed -i 's/[ \t]*$//' $olsrd4conf
 }
 
 # function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
@@ -453,7 +529,6 @@ load () {
     done
     olsrd4interfaces=${olsrd4interfaces%","}
     olsrd4ip4broadcast="\"olsrd4Ip4Broadcast\":\"$(awk '/Ip4Broadcast/ { print $2 }' $olsrd4conf)\","
-    olsrd4hna="\"olsrd4Hna\":\"$(sed -n '/Hna4/,/}/p' $olsrd4conf | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g')\","
     olsrd4plugins=''
     olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"",'
     if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]]; then
@@ -471,11 +546,24 @@ load () {
         olsrd4watchdog='"olsrd4watchdog":"on",'
     fi
     olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo$olsrd4watchdog
+
+    hna4list=''
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n "/hna4/I,/^}/ p" | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | sed -e 's/ /-/g'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        mask=$(mask_to_prefix $(echo $line | cut -d "-" -f 2))
+        hna4list=$hna4list'{"hna4address":"'$ip'/'$mask'"},'
+    done
+    [ "$hna4list" ] && hna4list='"hna4list":['${hna4list%","}'],' || hna4list=','
+
+    lq4list=''
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -i linkqualitymult | grep -vi default |awk '{print $2"-"$3}'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        value=$(echo $line | cut -d "-" -f 2)
+        lq4list=$lq4list'{"lq4address":"'$ip'","lq4value":"'$value'"},'
+    done
+    [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=','
+
     
-    #seperate to array
-    olsrd4lqmult="\"olsrd4LinkQualityMult\":\"$(egrep -v "^[[:space:]]*#" $olsrd4conf | awk '/LinkQualityMult/ { print $2" "$3";" }' | sed ':a;N;$!ba;s/\n//g')\","
-
-
     ## OLSRD6 missing here!
 
 
@@ -562,10 +650,11 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdsettings=$olsrdsettings'}]'
 
     # get all variables together for output
-    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4ip4broadcast$olsrd4hna$olsrd4lqmult$olsrd4plugins\"olsrd4config\":[$olsrd4interfaces]"
+    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4ip4broadcast$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
     echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
-    echo "\"definition\":{ }}"
+    echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]} }}"
+    
 }
 
 # function called when you click apply

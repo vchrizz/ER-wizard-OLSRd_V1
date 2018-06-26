@@ -42,22 +42,50 @@ autoupdate=201801260
         <div class="addable-template" style="padding-top:0px;">
             <div class="multi">
                 <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
-                <div>Interface: <input id="olsrd4intf" name="olsrd4interface" size="5" disabled /></div>
-                <div>Address: <input name="ipv4address" size="25" disabled /></div>
+                <div>Intf: <input id="olsrd4intf" name="olsrd4interface" size="5" disabled /></div>
+                <div>Addr: <input name="ipv4address" size="20" disabled /></div>
+                <div>Mode: <select name="meshmode" /></div>
+                <div>ADC: <input name="autochanges" type="checkbox" /></div>
+                <div>LQ: <input name="lqdefault" size="4"/></div>
                 <div id="olsrd4mainip"></div>
             </div>
         </div>
         <div class="addable-container"></div>
         <!-- although hidden, this add-button needs to exist! //-->
         <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-        <span><b><u>Settings:</u></b></span>
+       
+        <hr>
+        <span><b><u>HNA-Entries:</u></b></span><br>
+        <div class="addable" data-min="0" data-max="20" data-object="hna4list" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+          <span><input name="hna4address" size="20" placeholder="78.41.119.268/32" title="ip with /mask, i.e. 78.41.119.268/32" /></span>
+          <span class="text" style="top:5px">HNA4-Address with /Mask</span>
+        <span><button type="button" class="addable-remove">Remove</button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
         <div class="clear"></div><br><div class="clear"></div>
-        <div><input type="text" name="olsrd4Ip4Broadcast" size="70" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd4Hna" size="70" /></div><div><span class="text" data-infotip='IPv4 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 78.41.118.9 255.255.255.255; 78.41.112.214 255.255.255.255'>Hna4</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd4LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 193.238.156.229 0.5; 78.41.112.123 0.7'>LinkQualityMult (IPv4)</span></div>
-        <div class="clear"></div>
+
+        <hr>
+        <span><b><u>LinkQualitMultipliers:</u></b></span><br>
+        <div class="addable" data-min="0" data-max="20" data-object="lq4list" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+          <span><input name="lq4address" size="13" placeholder="78.41.119.268" title="ip, i.e. 78.41.119.268" /></span>
+          <span class="text" style="top:5px">IP-Address</span>
+          <span><input name="lq4value" size="4" placeholder="0.85" title="multiplier, must be between 0.01 and 1.00" /></span>
+          <span class="text" style="top:5px">LQ-Value (between 0.01 and 1.00)</span>
+        <span><button type="button" class="addable-remove">Remove</button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
+        <div class="clear"></div><br><div class="clear"></div>
+
         <span><b><u>Plugins:</u></b></span>
         <div class="clear"></div>
         <div><span><input name="olsrd4plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (0.0.0.0:2006)</span></div>
@@ -65,7 +93,7 @@ autoupdate=201801260
         <div><span><input name="olsrd4plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (0.0.0.0:8080)</span></div>
     </div>
 </fieldset>
-<fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary expanded">
+<fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary closed">
     <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
     <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
     <legend>OLSRd IPv6</legend>
@@ -106,7 +134,7 @@ autoupdate=201801260
         <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo ([::]:8081)</span></div>
     </div>
 </fieldset>
-<fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary expanded">
+<fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary closed">
     <div title="Optimized Link State Routing Protocol" style="position:absolute; top:10px; right:0px; z-index:-1; padding:10px;">
         <img src="http://olsrinterop.free.fr/pictures/logo1.png" width="365px" height="210px" style="opacity:0.1; filter:alpha(opacity=1);">
     </div>
@@ -115,6 +143,8 @@ autoupdate=201801260
     <div class="addable" data-min="1" data-max="1" data-object="olsrdsettings" data-objectify="1">
         <div class="addable-template">
             <div class="multi">
+                <div><input type="text" name="olsrd4Ip4Broadcast" size="70" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
+                <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
                 <div><input type="text" name="Pollrate" value="0.1" /></div><div><span class="text" data-infotip='Polling rate in seconds(float)'>Pollrate</span></div>
                 <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
                 <div><input type="text" name="HelloInterval" value="5.0" /></div><div><span class="text" data-infotip='Hello interval in seconds(float)'>HelloInterval</span></div>

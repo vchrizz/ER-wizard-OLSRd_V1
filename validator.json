@@ -1,22 +1,16 @@
-{
-	"rules": {
-		"olsrd4interface": {
-			"required": true,
-			"interfaceName": 1
-		},
-		"olsrd6interface": {
-			"required": true,
-			"interfaceName": 1
-		},
-		"text": {
-			"required": true,
-			"ipv4": 1
-		},
-		"checks": {
-			"required": false
-		},
-		"nchecks": {
-			"required": false
-		}
-	}
+{"rules":
+ {
+  "hna4address":{
+    "required":"true"
+   ,"ipv4":1
+  }
+ ,"lq4address":{
+    "required":"true"
+   ,"ipv4":1
+  }
+ ,"lq4value":{
+    "required":"true"
+   ,"number":1
+  }
+ }
 }
