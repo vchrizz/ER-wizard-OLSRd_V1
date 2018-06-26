@@ -130,7 +130,7 @@ else    #disabled, save to user-data
 fi
 
 #Remove future versions from user-data directory
-rm -f /config/user-data/olsrd*0.9.6.2-1*.deb >/dev/null
+#rm -f /config/user-data/olsrd*0.9.6.2-1*.deb >/dev/null
 rm -f /config/user-data/olsrd*0.9.5-1*.deb >/dev/null
 
 # CPO remove old installer script!
@@ -199,7 +199,7 @@ installolsrd () {
     #mips or mipsel?
     [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ] && arch='mips' || arch='mipsel'
     #version of install files?
-    version_latest_ondisk=$(ls /config/user-data/olsrd_*_${arch}.deb | cut -d_ -f2 | sort -r | head -1)
+    version_latest_ondisk=$(ls /config/user-data/olsrd_*_${arch}.deb 2>/dev/null | cut -d_ -f2 | sort -r | head -1)
     if [ -n ${version_latest_ondisk} ]; then
         ver=${version_latest_ondisk}
         olsrdpkg="${cfgusrdir}olsrd_${ver}_${arch}.deb"
@@ -348,6 +348,7 @@ setupv4olsrd () {
 # because olsrd runs only in ipv4 *OR* ipv6 mode
 # (olsrd2 is able to run v4 and v6 in one instance)
 setupv6olsrd () {
+  echo nix >/dev/null
 }
 
 # function called when you click the wizard
@@ -416,36 +417,6 @@ load () {
         olsrdsetupscript='"olsrdsetupscript":"on"'
     fi
 
-    # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
-    if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
-        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
-            if [ ! -d /config/scripts/pre-config.d ]; then
-                # create missing directory
-                mkdir /config/scripts/pre-config.d >>$log 2>>$log
-                chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
-                chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
-            fi
-            if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
-                #create file
-                echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
-                chmod 755 /config/scripts/pre-config.d/ebtables.sh
-            else
-                #add lines to file on top
-                linenumber=2
-                sed -i $linenumber'i\
-#olsrdwizard: dont forward ethernet frames between bridge ports\
-ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$log
-            fi
-            ebtables -P FORWARD DROP
-        fi
-    else
-        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
-            sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
-            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
-            ebtables -P FORWARD ACCEPT
-        fi
-    fi
-
     ###############################
     #  IPv4 OLSRd LOAD function   #
     ###############################
@@ -499,6 +470,37 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
 
 
     ## OLSRD6 missing here!
+
+
+    # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
+    if [[ $olsrd4meshif == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default 2>/dev/null) == *"br"* ]]; then
+        if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
+            if [ ! -d /config/scripts/pre-config.d ]; then
+                # create missing directory
+                mkdir /config/scripts/pre-config.d >>$log 2>>$log
+                chmod --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
+                chown --reference=/config/scripts/post-config.d /config/scripts/pre-config.d >>$log 2>>$log
+            fi
+            if [ ! -f /config/scripts/pre-config.d/ebtables.sh ]; then
+                #create file
+                echo -e '#!/bin/sh\n#olsrdwizard: dont forward ethernet frames between bridge ports\nebtables -P FORWARD DROP\nexit 0' > /config/scripts/pre-config.d/ebtables.sh
+                chmod 755 /config/scripts/pre-config.d/ebtables.sh
+            else
+                #add lines to file on top
+                linenumber=2
+                sed -i $linenumber'i\
+#olsrdwizard: dont forward ethernet frames between bridge ports\
+ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$log
+            fi
+            ebtables -P FORWARD DROP
+        fi
+    else
+        if [[ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 2 ]]; then
+            sed -i '/^#olsrdwizard:.*/d' /config/scripts/pre-config.d/ebtables.sh
+            sed -i '/^ebtables\ \-P\ FORWARD\ DROP/d' /config/scripts/pre-config.d/ebtables.sh
+            ebtables -P FORWARD ACCEPT
+        fi
+    fi
 
 
     ####### wizard version check against github
@@ -743,143 +745,9 @@ Interface "br9" {\
        fi
     fi
 
-    ###############################
-    #  IPv6 OLSRd APPLY function  #
-    ###############################
-    # enable olsrd6, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
-    olsrd6enabled=$(jq -M -r '.olsrd6enabled' $INPUT 2>/dev/null)
-    if [[ "$olsrd6enabled" == "on" ]]; then
-        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
-    else
-        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
-    fi
-    olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT 2>/dev/null)
-    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    if [[ "$olsrd6runonboot" == "on" ]]; then
-        if [[ ! -e /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
-            update-rc.d olsrd6 defaults >> /dev/null
-        fi
-    else
-        if [[ -e /etc/rc$defrunlvl.d/S*olsrd6 ]]; then
-            update-rc.d -f olsrd6 remove >> /dev/null
-        fi
-    fi
-    # set checked interfaces, else set default interface
-    enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT 2>/dev/null)"
-    if [[ ! -z $enabledv6interfaces ]]; then
-        enabledv6interfaces=$(echo $enabledv6interfaces | sed 's/\ /\\\ /')
-        sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv6interfaces\"/" $olsrd6default
-    else
-        sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd6default
-    fi
-    # backup /etc/default/olsrd6 to /config/user-data/olsrd.default
-    cp -f $olsrd6default $cfgusrdir$(basename $olsrd6default).default > /dev/null
-    # set v6 hna and lqmult
-    origIFS=$IFS
-    IFS=";"
-    # hna6 remove all entries in config
-    for hna in $(sed -n '/Hna6/,/}/p' $olsrd6config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g'); do
-        sed -i "/$hna/d" $olsrd6config
-    done
-    # hna6 add entries from input
-    olsrd6hna=$(jq -M -r '.olsrd6Hna' $INPUT 2>/dev/null)
-    hna6linenr=$(grep -n "Hna6" $olsrd6config | cut -d: -f1)
-    for hna in $olsrd6hna; do
-        sed -i "$(($hna6linenr+2))i$hna" $olsrd6config
-    done
-    # lqmult remove all entries in config
-    for lqmult in $(grep LinkQualityMult $olsrd6config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'); do
-        sed -i "/$lqmult/d" $olsrd6config
-    done
-    # lqmult add entries from input
-    olsrd6lqmult=$(jq -M -r '.olsrd6LinkQualityMult' $INPUT 2>/dev/null)
-    lqmult6linenr=$(grep -m1 -n LinkQualityMult $olsrd6config | cut -d: -f1)
-    for lqmult in $olsrd6lqmult; do
-        sed -i "$(($lqmult6linenr+1))iLinkQualityMult\ $lqmult" $olsrd6config
-    done
-    IFS=$origIFS
-    olsrd6plgtxtinfo=$(jq -M -r '.olsrd6plgtxtinfo' $INPUT 2>/dev/null)
-    if [[ "$olsrd6plgtxtinfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/2006/2007/' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/0.0.0.0/::/' $olsrd6config
-        fi
-    else
-        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd6config
-        fi
-    fi
-    olsrd6plgjsoninfo=$(jq -M -r '.olsrd6plgjsoninfo' $INPUT 2>/dev/null)
-    if [[ "$olsrd6plgjsoninfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/9090/9091/' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/0.0.0.0/::/' $olsrd6config
-        fi
-    else
-        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd6config
-        fi
-    fi
-    olsrd6plghttpinfo=$(jq -M -r '.olsrd6plghttpinfo' $INPUT 2>/dev/null)
-    if [[ "$olsrd6plghttpinfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8081"/' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd6config
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/0.0.0.0/::/g' $olsrd6config
-        fi
-    else
-        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd6config
-        fi
-    fi
 
-    #
-    # set emission intervals
-    #
-    Pollrate="$(jq -M -r '.olsrdsettings[] | .Pollrate' $INPUT 2>/dev/null)"
-    HelloValidityTime="$(jq -M -r '.olsrdsettings[] | .HelloValidityTime' $INPUT 2>/dev/null)"
-    HelloInterval="$(jq -M -r '.olsrdsettings[] | .HelloInterval' $INPUT 2>/dev/null)"
-    TcValidityTime="$(jq -M -r '.olsrdsettings[] | .TcValidityTime' $INPUT 2>/dev/null)"
-    TcInterval="$(jq -M -r '.olsrdsettings[] | .TcInterval' $INPUT 2>/dev/null)"
-    MidValidityTime="$(jq -M -r '.olsrdsettings[] | .MidValidityTime' $INPUT 2>/dev/null)"
-    MidInterval="$(jq -M -r '.olsrdsettings[] | .MidInterval' $INPUT 2>/dev/null)"
-    HnaValidityTime="$(jq -M -r '.olsrdsettings[] | .HnaValidityTime' $INPUT 2>/dev/null)"
-    HnaInterval="$(jq -M -r '.olsrdsettings[] | .HnaInterval' $INPUT 2>/dev/null)"
+    ## OLSRD6 missing here
 
-    [ "$Pollrate" == "null" ] && Pollrate="0.1"
-    [ "$HelloInterval" == "null" ] && HelloInterval="5.0"
-    [ "$HelloValidityTime" == "null" ] && HelloValidityTime="125.0"
-    [ "$TcInterval" == "null" ] && TcInterval="2.0"
-    [ "$TcValidityTime" == "null" ] && TcValidityTime="500.0"
-    [ "$MidInterval" == "null" ] && MidInterval="25.0"
-    [ "$MidValidityTime" == "null" ] && MidValidityTime="500.0"
-    [ "$HnaInterval" == "null" ] && HnaInterval="25.0"
-    [ "$HnaValidityTime" == "null" ] && HnaValidityTime="500.0"
-
-    [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config $olsrd6config
-    [ "$HelloInterval" ] && sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config $olsrd6config
-    [ "$HelloValidityTime" ] && sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config $olsrd6config
-    [ "$TcInterval" ] && sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config $olsrd6config
-    [ "$TcValidityTime" ] && sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config $olsrd6config
-    [ "$MidInterval" ] && sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config $olsrd6config
-    [ "$MidValidityTime" ] && sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config $olsrd6config
-    [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config $olsrd6config
-    [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config $olsrd6config
-
-    # CPO fix for LQ on olsrd6:
-    # IpVersion 6 must be defined prior to LineQualityMult
-    # check first occurence of each parameter
-    lineversion=$(grep -n IpVersion  $olsrd6config | awk -F":" {'print $1;'})
-    linelq=$(grep -n LinkQualityMult $olsrd6config | head -n 1 | awk -F":" {'print $1;'})
-    if [ "$lineversion" ] && [ "$linelq" ] && [ $(($lineversion - $linelq)) \> 0 ]; then 
-        # replace version parameter in order to put it below DebugLevel (should be quite on top)
-        sed -i '/IpVersion /d'          $olsrd6config
-        sed -i '/IP version to use/d'   $olsrd6config
-        sed -i '/DebugLevel/s/.*/&\n\n# IP version to use (4 or 6)\nIpVersion 6\n/' $olsrd6config
-    fi
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then

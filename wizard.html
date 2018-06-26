@@ -213,7 +213,7 @@ document.onchange=function(){
     }
     var input = document.getElementById('updatestatus');
     input.style.color = "black";
-    document.getElementById('updatefromgithub').disabled = true;
+    document.getElementById('updatefromgithub').disabled = false;
     if (input.value.match(/new version available/)) {
         document.getElementById('updatefromgithub').disabled = false;
         input.style.color = "red";
