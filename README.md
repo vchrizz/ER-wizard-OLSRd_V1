@@ -12,14 +12,18 @@ what to work on:
 * [done] remove interfaces from startup-parameters
 * [done] get rid of old code and patches, that are no longer needed.
 * [done] HNAs and LQs into default interface section
+* [done] add olsr-after-ntp.sh to restart olsrd after cold-boot and ntp-sync
 * [done] UI: one line for each hna entry and subnet (add and remove buttons), check syntax/values
 * [done] UI: one line for each LQ entry (add and remove buttons), check syntax and values
 * [done] UI: select mode (mesh, silent, ether) for each interface individually
 * [done] UI: manage default-lq for each interface individually
 * UI: paramsection for infoplugins (at least for httpinfo subnets/hosts)
 * UI: configure "main ip" for routers having multiple public IPs
+* configure AutoDetectChanges for InterfaceDefaults
+* add RtProto, RtTable, RtTableDefault, MainIp, Weight to config-migration scripts
+* handle second+ IPs of an olsr interface as HNA automatically?
 * improve handling of bridges with ebtables! only block what is really needed (i.e. use --logical-in)
-* tune default parameters of info-plugins (especialle httpinfo plugin allowed hosts/subnets)
+* tune default parameters of info-plugins (especially httpinfo plugin allowed hosts/subnets)
 * activate httpinfo, watchdog on install "by default"?
 * establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
 * save important data to "custom-attributes" in EdgeOS configuration?
