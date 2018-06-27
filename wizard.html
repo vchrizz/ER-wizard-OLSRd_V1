@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201806260
+versioninfo=201806270
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201801260
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -17,6 +17,7 @@ autoupdate=201801260
     <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
     <br>Version [0962a/20180626]</center>
 </legend>
+
 <div style="padding:15px;border: 1px solid lightgray;width:648px">
   <table border="0">
     <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
@@ -27,6 +28,7 @@ autoupdate=201801260
     <tr><td colspan="2"><div><span><input id="autoupdatefromgithub" name="autoupdatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, a daily cronjob will check for a new version on Github and install it automatically, if it is released to autoupdate.'>Upgrade Wizard from GitHub <b>automatically</b></span></div></td></tr>
   </table>
 </div>
+
 <fieldset id="ipv4olsrd" name="ipv4olsrd" class="primary expanded">
     <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
     <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
@@ -45,23 +47,25 @@ autoupdate=201801260
                 <div>Intf: <input id="olsrd4intf" name="olsrd4interface" size="5" disabled /></div>
                 <div>Addr: <input name="ipv4address" size="20" disabled /></div>
                 <div>Mode: <select name="meshmode" /></div>
-                <div>ADC: <input name="autochanges" type="checkbox" /></div>
-                <div>LQ: <input name="lqdefault" size="4"/></div>
+                <!--div>ADC: <input name="autochanges" type="checkbox" /></div-->
+                <div>defLQ: <input name="lqdefault" size="3" title="default LQ, empty or 0.01-1.00" /></div>
                 <div id="olsrd4mainip"></div>
             </div>
         </div>
         <div class="addable-container"></div>
         <!-- although hidden, this add-button needs to exist! //-->
         <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-       
         <hr>
+        <table border=0 width=645 cellspacing=0 cellpadding=0><tr><td>
         <span><b><u>HNA-Entries:</u></b></span><br>
         <div class="addable" data-min="0" data-max="20" data-object="hna4list" data-objectify="1">
         <div class="addable-template" style="padding-top:0px;">
         <div class="multi">
-          <span><input name="hna4address" size="20" placeholder="78.41.119.268/32" title="ip with /mask, i.e. 78.41.119.268/32" /></span>
-          <span class="text" style="top:5px">HNA4-Address with /Mask</span>
-        <span><button type="button" class="addable-remove">Remove</button></span>
+          <span class="text" style="top:5px">IP</span>
+          <span><input name="hna4address" size="12" placeholder="78.41.119.268" title="IPv4, i.e. 78.41.119.268" /></span>
+          <span class="text" style="top:5px">/</span>
+          <span><input name="hna4mask" size="2" placeholder="32" title="Mask, i.e. 32" /></span>
+        <span><button type="button" class="addable-remove"></button></span>
         </div>
         </div>
         <div class="addable-container"></div>
@@ -69,30 +73,33 @@ autoupdate=201801260
         </div>
         <div class="clear"></div><br><div class="clear"></div>
 
-        <hr>
-        <span><b><u>LinkQualitMultipliers:</u></b></span><br>
+        </td><td width=10></td><td>
+        <span><b><u>LinkQualityMultipliers:</u></b></span><br>
         <div class="addable" data-min="0" data-max="20" data-object="lq4list" data-objectify="1">
         <div class="addable-template" style="padding-top:0px;">
         <div class="multi">
-          <span><input name="lq4address" size="13" placeholder="78.41.119.268" title="ip, i.e. 78.41.119.268" /></span>
-          <span class="text" style="top:5px">IP-Address</span>
-          <span><input name="lq4value" size="4" placeholder="0.85" title="multiplier, must be between 0.01 and 1.00" /></span>
-          <span class="text" style="top:5px">LQ-Value (between 0.01 and 1.00)</span>
-        <span><button type="button" class="addable-remove">Remove</button></span>
+          <span class="text" style="top:5px">IP</span>
+          <span><input name="lq4address" size="12" placeholder="78.41.119.268" title="IPv4, i.e. 78.41.119.268" /></span>
+          <span class="text" style="top:5px"> LQ</span>
+          <span><input name="lq4value" size="3" placeholder="0.85" title="multiplier, must be between 0.01 and 1.00" /></span>
+        <span><button type="button" class="addable-remove"></button></span>
         </div>
         </div>
         <div class="addable-container"></div>
         <button type="button" class="addable-add">Add</button>
         </div>
-        <div class="clear"></div><br><div class="clear"></div>
-
+        </td></tr>
+        </table>
+        <hr>
         <span><b><u>Plugins:</u></b></span>
         <div class="clear"></div>
-        <div><span><input name="olsrd4plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (0.0.0.0:2006)</span></div>
-        <div><span><input name="olsrd4plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo (0.0.0.0:9090)</span></div>
-        <div><span><input name="olsrd4plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (0.0.0.0:8080)</span></div>
+        <div><span><input name="olsrd4plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (tcp:2006)</span></div>
+        <div><span><input name="olsrd4plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo (tcp:9090)</span></div>
+        <div><span><input name="olsrd4plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (tcp:8080)</span></div>
+        <div><span><input name="olsrd4plgarprefresh" type="checkbox" /></span></div><div><span class="text">arprefresh</span></div>
     </div>
 </fieldset>
+
 <fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary closed">
     <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
     <div title="Optimized Link State Routing Daemon" style="position:absolute; top:10px; left:125px; width:560px; height:120px; z-index:0; padding:10px; background-image:url(http://www.olsr.org/files/olsr_logo.jpg); background-repeat:no-repeat;opacity:0.5;filter:alpha(opacity=5);"></div>
@@ -102,38 +109,67 @@ autoupdate=201801260
         <div class="clear"></div><br><div class="clear"></div>
         <div><span><input name="olsrd6runonboot" type="checkbox" /></span> Run OLSR daemon<br>(on boot, if enabled)</div>
         <div class="clear"></div><br><div class="clear"></div>
+        <div><span><input name="olsrd6watchdog" type="checkbox" /></span> Use OLSRd-Watchdog</div>
+        <div class="clear"></div><br><div class="clear"></div>
         <span><b><u>Interfaces:</u></b></span>
         <div class="addable-template" style="padding-top:0px;">
             <div class="multi">
                 <div>Enable: <input name="enabled" type="checkbox" onclick="validate()" /></div>
-                <div>Interface: <input id="olsrd6intf" name="olsrd6interface" size="5" disabled /></div>
-                <div>Address: <input name="ipv6address" size="25" disabled /></div>
+                <div>Intf: <input id="olsrd6intf" name="olsrd6interface" size="5" disabled /></div>
+                <div>Addr: <input name="ipv6address" size="20" disabled /></div>
+                <div>Mode: <select name="meshmode" /></div>
+                <!--div>ADC: <input name="autochanges" type="checkbox" /></div-->
+                <div>defLQ: <input name="lqdefault" size="3" title="default LQ, empty or 0.01-1.00" /></div>
                 <div id="olsrd6mainip"></div>
             </div>
         </div>
         <div class="addable-container"></div>
         <!-- although hidden, this add-button needs to exist! //-->
         <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
-        <span><b><u>Settings:</u></b></span>
+        <hr>
+        <table border=0 width=645 cellspacing=0 cellpadding=0><tr><td>
+        <span><b><u>HNA-Entries:</u></b></span><br>
+        <div class="addable" data-min="0" data-max="20" data-object="hna6list" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+          <span class="text" style="top:5px">IP</span>
+          <span><input name="hna6address" size="12" placeholder="2a02:60:12:3400::1" title="IPv6, i.e. 2a02:60:12:3400::1" /></span>
+          <span class="text" style="top:5px">/</span>
+          <span><input name="hna6mask" size="2" placeholder="64" title="Prefix, i.e. 64" /></span>
+        <span><button type="button" class="addable-remove"></button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
         <div class="clear"></div><br><div class="clear"></div>
-        <!-- issue: setting ip6 multicast does not work with olsrd 0.6.6.2 - daemon hangs while starting
-        <div><input type="text" name="olsrd6Ip6MulticastSite" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using site-local addresses. If not defined, ff05::15 is used'>Ip6MulticastSite</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd6Ip6MulticastGlobal" size="70" /></div><div><span class="text" data-infotip='IPv6 multicast address to use when using global addresses. If not defined, ff0e::1 is used'>Ip6MulticastGlobal</span></div>
-        <div class="clear"></div>
-        -->
-        <div><input type="text" name="olsrd6Hna" size="70" /></div><div><span class="text" data-infotip='IPv6 Host and Network Association messages allow hosts to announce themselves as gateways to external networks. Examples: 2a02:60:100:a907::2/64; 2a02:60:100:a905::254/64'>Hna6</span></div>
-        <div class="clear"></div>
-        <div><input type="text" name="olsrd6LinkQualityMult" size="70" /></div><div><span class="text" data-infotip='Multiply routes with the factor given here. Allowed values are between 0.01 and 1.0. It is only used when LQ-Level is greater than 0. Examples: 2a02:60:100:c00::7 0.3; 2a02:60:100:c00::8 0.3'>LinkQualityMult (IPv6)</span></div>
-        <div class="clear"></div>
+
+        </td><td width=10></td><td>
+        <span><b><u>LinkQualityMultipliers:</u></b></span><br>
+        <div class="addable" data-min="0" data-max="20" data-object="lq6list" data-objectify="1">
+        <div class="addable-template" style="padding-top:0px;">
+        <div class="multi">
+          <span class="text" style="top:5px">IP</span>
+          <span><input name="lq6address" size="12" placeholder="2a02:60:12:3400::1" title="IPv6, i.e. 2a02:60:12:3400::1" /></span>
+          <span class="text" style="top:5px"> LQ</span>
+          <span><input name="lq6value" size="3" placeholder="0.85" title="multiplier, must be between 0.01 and 1.00" /></span>
+        <span><button type="button" class="addable-remove"></button></span>
+        </div>
+        </div>
+        <div class="addable-container"></div>
+        <button type="button" class="addable-add">Add</button>
+        </div>
+        </td></tr>
+        </table>
+        <hr>
         <span><b><u>Plugins:</u></b></span>
         <div class="clear"></div>
-        <!-- <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo</span></div> -->
-        <div><span><input name="olsrd6plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo ([::]:2007)</span></div>
-        <div><span><input name="olsrd6plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo ([::]:9091)</span></div>
-        <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo ([::]:8081)</span></div>
+        <div><span><input name="olsrd6plgtxtinfo" type="checkbox" /></span></div><div><span class="text">txtinfo (tcp:2007)</span></div>
+        <div><span><input name="olsrd6plgjsoninfo" type="checkbox" /></span></div><div><span class="text">jsoninfo (tcp:9091)</span></div>
+        <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (tcp:8081)</span></div>
     </div>
 </fieldset>
+
 <fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary closed">
     <div title="Optimized Link State Routing Protocol" style="position:absolute; top:10px; right:0px; z-index:-1; padding:10px;">
         <img src="http://olsrinterop.free.fr/pictures/logo1.png" width="365px" height="210px" style="opacity:0.1; filter:alpha(opacity=1);">
@@ -143,7 +179,7 @@ autoupdate=201801260
     <div class="addable" data-min="1" data-max="1" data-object="olsrdsettings" data-objectify="1">
         <div class="addable-template">
             <div class="multi">
-                <div><input type="text" name="olsrd4Ip4Broadcast" size="70" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
+                <div><input type="text" name="olsrd4Ip4Broadcast" size="30" /></div><div><span class="text" data-infotip='Forces the given IPv4 broadcast address to be used as destination address for all outgoing OLSR traffic on the interface. In reality only the address 255.255.255.255 makes sense to set here. If this option is not set the broadcast address that the interface is configured with will be used. This address will also be updated in run-time if a change is detected.'>Ip4Broadcast</span></div>
                 <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
                 <div><input type="text" name="Pollrate" value="0.1" /></div><div><span class="text" data-infotip='Polling rate in seconds(float)'>Pollrate</span></div>
                 <div class="clear"></div><br><div class="clear"></div><div class="clear"></div><br><div class="clear"></div>
@@ -169,8 +205,9 @@ autoupdate=201801260
         <button type="button" class="addable-add" style="position:absolute;right:0px;opacity:0.0;filter:alpha(opacity=0);" disabled></button>
     </div>
 </fieldset>
+
 <div>
-    <span>Olsrd can autodetect changes in NIC configurations (IP address changes etc.).<br>This is Enabled by default but can be turned off pr. NIC to save CPU cycles.<br></span>
+    <span>Olsrd is enabled to autodetect changes in NIC configurations (IP address changes etc.) for all interfaces.</span><br>
     <input id="olsrdrestart" name="olsrdrestartnow"  type="checkbox" /><span> Restart OLSR-IPv4 daemon on 'Apply'.</span><br>
     <input id="olsrdrestart" name="olsrdrestart6now" type="checkbox" /><span> Restart OLSR-IPv6 daemon on 'Apply'.</span><br>
     <br>
@@ -179,30 +216,25 @@ autoupdate=201801260
 <script>
 function disable() {
     var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
-    for(var i=0; i<v4nodes.length; i++)
-    {
+    for(var i=0; i<v4nodes.length; i++) {
         v4nodes[i].disabled = true;
     }
     var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
-    for(var i=0; i<v6nodes.length; i++)
-    {
+    for(var i=0; i<v6nodes.length; i++) {
         v6nodes[i].disabled = true;
     }
     var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
-    for(var i=0; i<cfgnodes.length; i++)
-    {
+    for(var i=0; i<cfgnodes.length; i++) {
         cfgnodes[i].disabled = true;
     }
     var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
-    for(var i=0; i<restartnodes.length; i++)
-    {
+    for(var i=0; i<restartnodes.length; i++) {
         restartnodes[i].disabled = true;
     }
 }
 function enable() {
     var v4nodes = document.getElementById("ipv4olsrd").getElementsByTagName('*');
-    for(var i=0; i<v4nodes.length; i++)
-    {
+    for(var i=0; i<v4nodes.length; i++) {
         if ((v4nodes[i].name == "olsrd4interface") || (v4nodes[i].name == "ipv4address")) {
             v4nodes[i].disabled = true;
         } else {
@@ -210,8 +242,7 @@ function enable() {
         }
     }
     var v6nodes = document.getElementById("ipv6olsrd").getElementsByTagName('*');
-    for(var i=0; i<v6nodes.length; i++)
-    {
+    for(var i=0; i<v6nodes.length; i++) {
         if ((v6nodes[i].name == "olsrd6interface") || (v6nodes[i].name == "ipv6address")) {
             v6nodes[i].disabled = true;
         } else {
@@ -219,13 +250,11 @@ function enable() {
         }
     }
     var cfgnodes = document.getElementById("olsrdsettings").getElementsByTagName('*');
-    for(var i=0; i<cfgnodes.length; i++)
-    {
+    for(var i=0; i<cfgnodes.length; i++) {
         cfgnodes[i].disabled = false;
     }
     var restartnodes = document.getElementById("olsrdrestart").getElementsByTagName('*');
-    for(var i=0; i<restartnodes.length; i++)
-    {
+    for(var i=0; i<restartnodes.length; i++) {
         restartnodes[i].disabled = false;
     }
 }

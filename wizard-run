@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962a/201806260]
+# Version [0962a/201806270]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -24,20 +24,21 @@ cfgusrdir="/config/user-data/"
 olsrddir="/config/olsrd/"
 olsrd4conf="${olsrddir}olsrd4.conf"
 olsrd4def="${olsrddir}olsrd4default"
+olsrd4default='/etc/default/olsrd'
+olsrd4init='/etc/init.d/olsrd'
+olsrd6conf="${olsrddir}olsrd6.conf"
+olsrd6def="${olsrddir}olsrd6default"
+olsrd6default='/etc/default/olsrd6'
+olsrd6init='/etc/init.d/olsrd6'
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 
 # default olsrd configuration files
-olsrdconfig='/etc/olsrd/olsrd.conf'
-olsrd4init='/etc/init.d/olsrd'
-olsrd4default='/etc/default/olsrd'
+#olsrdconfig='/etc/olsrd/olsrd.conf'
 olsrd4bin='/usr/sbin/olsrd'
-olsrd6init='/etc/init.d/olsrd6'
-olsrd6default='/etc/default/olsrd6'
 olsrd6bin='/usr/sbin/olsrd6'
 # user-defined olsrd configuration files
 #olsrd4config="${cfgusrdir}olsrd4.conf"
 #olsrd6config="${cfgusrdir}olsrd6.conf"
-olsrd4config="${olsrddir}olsrd4.conf"
 olsrd6config="${olsrddir}olsrd6.conf"
 
 #define update sources on github
@@ -60,10 +61,22 @@ cfgusrdir="/config/user-data/"
 olsrddir="/config/olsrd/"
 olsrd4conf="${olsrddir}olsrd4.conf"
 olsrd4def="${olsrddir}olsrd4default"
+olsrd4default='/etc/default/olsrd'
+olsrd4init='/etc/init.d/olsrd'
+olsrd6conf="${olsrddir}olsrd6.conf"
+olsrd6def="${olsrddir}olsrd6default"
+olsrd6default='/etc/default/olsrd6'
+olsrd6init='/etc/init.d/olsrd6'
 echo "Running olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
-if [ -x /usr/sbin/olsrd ] && [ -f $olsrd4conf ]; then
-    echo "olsrd seems to be installed $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
-    exit 0
+if [ -x /usr/sbin/olsrd ] && 
+   [ -f $olsrd4conf ] && 
+   (awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd4default | tr -d \" | grep -q "$olsrd4conf") &&
+   [ -x /usr/sbin/olsrd6 ] && 
+   [ -f $olsrd6conf ] && 
+   (awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \" | grep -q "$olsrd6conf")
+   then
+        echo "olsrd seems to be installed $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
+        exit 0
 fi
 olsrdv1wizard=""
 for i in $(find /config/wizard/feature/ -name wizard-run | grep -i olsr); do
@@ -77,19 +90,59 @@ if [ ! $olsrdv1wizard ]; then
     exit
 fi
 echo '#!/bin/bash' >func.sh
+sed -n "/^write_ntp_script ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^mask_to_prefix ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^installolsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^setupv4olsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^setupv6olsrd ()/,/^}/p" $olsrdv1wizard >>func.sh
 sed -n "/^load ()/,/^}/p" $olsrdv1wizard >>func.sh
 source func.sh
-load >>$log
+load >>$log 2>>$log
 rm -f func.sh 
-/etc/init.d/olsrd restart >>$log 2>>$log
-/etc/init.d/olsrd6 restart >>$log 2>>$log
+$olsrd4init restart >>$log 2>>$log
+$olsrd6init restart >>$log 2>>$log
 echo "Finished olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 exit 0
 ENDSCRIPTCONTENT
+}
+
+write_ntp_script () {
+    cat >/config/scripts/post-config.d/olsr-after-ntp.sh <<'ENDSCRIPTCONTENT'
+#!/bin/sh
+# system time and date might be wrong prior to internet connectivity AND ntp sync:
+# - on cold restart (restored power) the system clock is 2015-01-01
+# - during a reboot the system clock gets frozen for approximatly 50 seconds
+# - after internet connectivity is restored, ntpd will set the correct date and time somewhen
+# this script will restart olsrd after ntp in order to make olsrd-httpinfo-plugin report "uptime" correctly
+
+LOG=/tmp/olsr-after-ntp.log
+if [ $(date +%s) -lt 1529900000 ] &&
+   [ -f /etc/init.d/olsrd ] &&
+   [ $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /etc/default/olsrd 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES") -eq 1 ]
+then
+    (echo $(date)" - Checking sync of ntp..." >>$LOG
+    p="ping -nq -c1 -w1 8.8.8.8"; c=1
+    until $p >/dev/null 2>&1; do
+      echo $(date)" - Waiting for network ($c)..." >>$LOG
+      c=$(($c+1))
+      sleep 3
+      [ $c -gt 300 ] && echo $(date)"Giving up..." >>$LOG && break
+    done
+    if [ $c -le 300 ]; then
+        /etc/init.d/ntp stop >>$LOG 2>&1
+        /usr/sbin/ntpdate-debian time.nist.gov >>$LOG 2>&1
+        echo $(date)" - new date is set..." >>$LOG
+        /etc/init.d/ntp start >>$LOG 2>&1
+        [ $(pgrep -x olsrd) ] && sudo /etc/init.d/olsrd restart >>$LOG 2>&1
+    fi
+    echo $(date)" - exit $0..." >>$LOG ) &
+    echo $(date)" - preperation done" >>$LOG
+else
+    echo $(date)" - startup-date seems fine or olsrd not configured to start." >>$LOG
+fi
+exit 0
+ENDSCRIPTCONTENT
+    chmod 755 /config/scripts/post-config.d/olsr-after-ntp.sh
 }
 
 
@@ -153,6 +206,7 @@ echo "clean up old install-scripts and package files..." >>$log
 [ -f "/config/user-data/0xFF-BMK-webstatus_1.4.deb" ] && rm /config/user-data/0xFF-BMK-webstatus_1.4.deb >>$log
 [ -f "/etc/olsrdwatchdog" ] && rm /etc/olsrdwatchdog >>$log
 
+[ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ] && arch='mips' || arch='mipsel'
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
@@ -198,7 +252,7 @@ function valid_ip () {
     return $stat
 }
 
-function mask_to_prefix () {
+mask_to_prefix () {
   case "$1" in 
     "255.255.255.255") echo "32";;
     "255.255.255.254") echo "31";;
@@ -237,7 +291,7 @@ function mask_to_prefix () {
   esac
 }
 
-function prefix_to_mask () {
+prefix_to_mask () {
   case "$1" in 
     "32") echo "255.255.255.255";;
     "31") echo "255.255.255.254";;
@@ -302,7 +356,7 @@ installolsrd () {
               echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
               echo "Starting process..." >>$log
-              /etc/init.d/olsrd start
+              $olsrd4init start
               echo "PID done..." >>$log
             fi
           else
@@ -310,7 +364,7 @@ installolsrd () {
             echo "Killing process..." >>$log
             kill $running
             echo "Starting process..." >>$log
-            /etc/init.d/olsrd start
+            $olsrd4init start
             echo "PID done..." >>$log
           fi
         else
@@ -319,7 +373,7 @@ installolsrd () {
         fi
         #
         #install using force-overwrite
-        dpkg --force-overwrite -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
+        dpkg -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
         statusolsrd=$?
         if [[ $statusolsrd == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >>$log
@@ -340,12 +394,12 @@ setupv4olsrd () {
     [ -f $olsrd4conf ] || cp /etc/olsrd/olsrd.conf $olsrd4conf
     if [ -f $olsrd4def ]; then
         #on update: restore olsrd-default (for START_OLSRD and DAEMON_OPT)
-        cp $olsrd4def /etc/default/olsrd
+        cp $olsrd4def $olsrd4default
     else
-        #on first install, on migration: add config-file to olsrd-detault and save it in config dir
+        #on first install, on migration: add config-file to olsrd-default and save it in config dir
         olsrd4cnfesc=$(echo $olsrd4conf | sed -e 's/[\/&]/\\&/g')
-        sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd4cnfesc\"/" /etc/default/olsrd
-        cp /etc/default/olsrd $olsrd4def
+        sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd4cnfesc\"/" $olsrd4default
+        cp $olsrd4default $olsrd4def
     fi
     #on migration
     #migrate settings from former olsrd4.conf and olsrd4.default (this will happen only once)
@@ -354,12 +408,12 @@ setupv4olsrd () {
         # active interfaces in -i section
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-        autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
         for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
         done
@@ -371,27 +425,33 @@ setupv4olsrd () {
           [[ "$int" =~ '{' ]] && continue
           settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-          autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+          #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
-          echo "## $int ##"
-          [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
-          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
+          echo "## $int ##" >>$log
+          [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
+          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
         done
         #
         # LQs and HNAs
         customLQ=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -i linkqualitymult | grep -vi default | sed -e 's/$/\\/g')
-        [ "$customLQ" ] && echo -e "## customLQ ##\n$customLQ"
+        [ "$customLQ" ] && echo -e "## customLQ ##\n$customLQ" >>$log
         [ "$customLQ" ] && sed -i "/InterfaceDefaults/,/^}/s/^}/$customLQ \n}/g" $olsrd4conf
         hna4=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*hna4/I,/}/p' | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | sed -e 's/$/\\/g')
-        [ "$hna4" ] && echo -e "## hna4 ##\n$hna4"
+        [ "$hna4" ] && echo -e "## hna4 ##\n$hna4" >>$log
         [ "$hna4" ] && sed -i "/Hna4/,/^}/s/^}/$hna4 \n}/g" $olsrd4conf
         #
         #enabled on boot
         startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd.default 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
-        [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##"
-        [ "$startonboot" -eq 1 ] && sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' /etc/default/olsrd || sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' etc/default/olsrd
+        [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##" >>$log
+        if [ "$startonboot" -eq 1 ]; then
+            sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
+            sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4def
+        else
+            sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4default
+            sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4def
+        fi
         #
         #plugins and pluginparameters
         plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
@@ -420,7 +480,92 @@ setupv4olsrd () {
 # because olsrd runs only in ipv4 *OR* ipv6 mode
 # (olsrd2 is able to run v4 and v6 in one instance)
 setupv6olsrd () {
-  echo nix >/dev/null
+    #on first install, on migration: create config dir and file
+    [ -d $olsrddir ] || mkdir $olsrddir
+    [ -f $olsrd6conf ] || cp /etc/olsrd/olsrd6.conf $olsrd6conf
+    if [ -f $olsrd6def ]; then
+        #on update: restore olsrd-default (for START_OLSRD and DAEMON_OPT)
+        cp $olsrd6def $olsrd6default
+    else
+        #on first install, on migration: add config-file to olsrd-default and save it in config dir
+        olsrd6cnfesc=$(echo $olsrd6conf | sed -e 's/[\/&]/\\&/g')
+        sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd6cnfesc\"/" $olsrd6default
+        cp $olsrd6default $olsrd6def
+    fi
+    
+    #on migration
+    #migrate settings from former olsrd6.conf and olsrd6.default (this will happen only once)
+    [ -f /config/user-data/olsrd6.default ] && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' /config/user-data/olsrd6.default | tr -d \") || conffile=""
+    if [ "$conffile" ]; then
+        # active interfaces in -i section
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
+        mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
+        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd6.default | awk -F'=' '{print $2}' | tr -d '"'); do
+          echo "## $int ##"
+          [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
+          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
+          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
+        done
+        #
+        # active interfaces and its settings from olsrd6.conf
+        for int in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw interface); do
+          int=$(echo $int | tr -d '"' | tr '[:upper:]' '[:lower:]')
+          [[ "$int" =~ 'nterface' ]] && continue
+          [[ "$int" =~ '{' ]] && continue
+          settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
+          mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
+          #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+          defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+          echo "## $int ##" >>$log
+          [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
+          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
+          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
+        done
+        #
+        # LQs and HNAs
+        customLQ=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -i linkqualitymult | grep -vi default | sed -e 's/$/\\/g')
+        [ "$customLQ" ] && echo -e "## customLQ ##\n$customLQ" >>$log
+        [ "$customLQ" ] && sed -i "/InterfaceDefaults/,/^}/s/^}/$customLQ \n}/g" $olsrd6conf
+        hna6=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*hna6/I,/}/p' | grep -E ":" | sed -e 's/$/\\/g')
+        [ "$hna6" ] && echo -e "## hna6 ##\n$hna6" >>$log
+        [ "$hna6" ] && sed -i "/hna6/,/^}/s/^}/$hna6 \n}/g" $olsrd6conf
+        #
+        #enabled on boot
+        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.default 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
+        [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##" >>$log
+        if [ "$startonboot" -eq 1 ]; then
+            sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
+            sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6def
+        else
+            sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
+            sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6def
+        fi
+        #
+        #plugins and pluginparameters
+        plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.conf | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
+        if [ "$plugins" ]; then
+          for plugin in $plugins; do
+            file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+            [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
+            echo "## $plugin ## Filename $file" >>$log
+            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.conf 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
+            #first delete pluginblock, then append old block with current files
+            sed -i '/^[# \t]*loadplugin[ \t]\+"'$plugin'/I,/}/ d' $olsrd6conf 2>>$log
+            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' /config/user-data/olsrd6.conf 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd6conf 2>>$log
+          done
+        fi
+        #
+        #migration done, now avoid to do that again
+        #move old files to .bak
+        mv /config/user-data/olsrd6.default /config/user-data/olsrd6.default.bak
+        mv $conffile /config/user-data/olsrd6.bak
+    fi
+    #trim tailing blanks/tabs
+    sed -i 's/[ \t]*$//' $olsrd6conf
 }
 
 # function called when you click the wizard
@@ -496,7 +641,7 @@ load () {
     [[ -w $olsrd4default && $(grep START_OLSRD $olsrd4default) != \#* ]] && olsrd4enabled='"olsrd4enabled":"on",' || olsrd4enabled='"olsrd4enabled":"",'
 
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd) ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
+    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd 2>/dev/null) ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
 
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
@@ -514,10 +659,16 @@ load () {
         for mintf in $olsrd4meshif; do
             [[ "$mintf" == "${v4ifinterface}" ]] && intfstatus='"enabled":"on",' && break
         done
-        olsrd4interfaces=$olsrd4interfaces'{'$intfstatus'"olsrd4interface":"'${v4ifinterface}'","ipv4address":"'${v4ifaddress}'"},'
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface .*'$v4ifinterface'.*$/I,/}/p')
+        mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
+        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+        [ "$mode" ] && (echo "$mode" | grep -iqE "mesh|silent|ether") && mode='"meshmode":"'$mode'",' || mode=''
+        #[ "$autodetectchanges" ] && (echo "$autodetectchanges" | grep -iq "yes") && autodetectchanges='"autochanges":"on",' || autodetectchanges=''
+        [ "$defaultLQ" ] && defaultLQ='"lqdefault":"'$defaultLQ'",' || defaultLQ=''
+        olsrd4interfaces=$olsrd4interfaces'{'$intfstatus$mode$autodetectchanges$defaultLQ'"olsrd4interface":"'${v4ifinterface}'","ipv4address":"'${v4ifaddress}'"},'
     done
     olsrd4interfaces=${olsrd4interfaces%","}
-    olsrd4ip4broadcast="\"olsrd4Ip4Broadcast\":\"$(awk '/Ip4Broadcast/ { print $2 }' $olsrd4conf)\","
     olsrd4plugins=''
     olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"",'
     if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]]; then
@@ -531,16 +682,20 @@ load () {
     if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]]; then
         olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",'
     fi
+    olsrd4plgarprefresh='"olsrd4plgarprefresh":"",'
+    if [[ $(grep LoadPlugin.*arprefresh $olsrd4conf) != \#* ]]; then
+        olsrd4plgarprefresh='"olsrd4plgarprefresh":"on",'
+    fi
     if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4conf) != \#* ]]; then
         olsrd4watchdog='"olsrd4watchdog":"on",'
     fi
-    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo$olsrd4watchdog
+    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo$olsrd4plgarprefresh$olsrd4watchdog
 
     hna4list=''
     for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n "/hna4/I,/^}/ p" | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | sed -e 's/ /-/g'); do
         ip=$(echo $line | cut -d "-" -f 1)
         mask=$(mask_to_prefix $(echo $line | cut -d "-" -f 2))
-        hna4list=$hna4list'{"hna4address":"'$ip'/'$mask'"},'
+        hna4list=$hna4list'{"hna4address":"'$ip'","hna4mask":"'$mask'"},'
     done
     [ "$hna4list" ] && hna4list='"hna4list":['${hna4list%","}'],' || hna4list=''
 
@@ -553,11 +708,83 @@ load () {
     [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=''
 
     
-    ## OLSRD6 missing here!
+    ###############################
+    #  IPv6 OLSRd LOAD function   #
+    ###############################
+    # get current olsrd6 configuration and return configured values to wizard.html
+    [[ -w $olsrd6default && $(grep START_OLSRD $olsrd6default) != \#* ]] && olsrd6enabled='"olsrd6enabled":"on",' || olsrd6enabled='"olsrd6enabled":"",'
+
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd4runonboot":"",'
+
+    # get all running ethernet interfaces in format eth0;192.168.1.1/24
+    olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
+    olsrd6interfaces=''
+    v6interfacelist=$(ip -f inet6 addr | awk '/^[0-9]:*|inet6/ { print $2 }' | sed ':a;N;$!ba;s/:\n/;/g' | grep ";")
+    for v6if in $v6interfacelist; do
+        v6ifinterface=$(echo $v6if | cut -d";" -f1)
+        v6ifaddress=$(echo $v6if | cut -d";" -f2)
+        # remove trailing @interfacename if occurred (eg. when defining vlans)
+        v6ifinterface=$(echo ${v6ifinterface} | cut -d@ -f1)
+        # skip loopback and physical switch interfaces
+        [[ "${v6ifinterface}" == "lo" ]] && continue
+        [[ "${v6ifinterface}" == "switch0" ]] && continue
+        [[ "${v6ifaddress}" == "fe80"* ]] && continue
+        intfstatus=''
+        for mintf in $olsrd6meshif; do
+            [[ "$mintf" == "${v6ifinterface}" ]] && intfstatus='"enabled":"on",' && break
+        done
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface .*'$v6ifinterface'.*$/I,/}/p')
+        mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
+        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+        [ "$mode" ] && (echo "$mode" | grep -iqE "mesh|silent|ether") && mode='"meshmode":"'$mode'",' || mode=''
+        #[ "$autodetectchanges" ] && (echo "$autodetectchanges" | grep -iq "yes") && autodetectchanges='"autochanges":"on",' || autodetectchanges=''
+        [ "$defaultLQ" ] && defaultLQ='"lqdefault":"'$defaultLQ'",' || defaultLQ=''
+        olsrd6interfaces=$olsrd6interfaces'{'$intfstatus$mode$autodetectchanges$defaultLQ'"olsrd6interface":"'${v6ifinterface}'","ipv6address":"'${v6ifaddress}'"},'
+    done
+    olsrd6interfaces=${olsrd6interfaces%","}
+    olsrd6plugins=''
+    olsrd6plgtxtinfo='"olsrd6plgtxtinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6conf) != \#* ]]; then
+        olsrd6plgtxtinfo='"olsrd6plgtxtinfo":"on",'
+    fi
+    olsrd6plgjsoninfo='"olsrd6plgjsoninfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6conf) != \#* ]]; then
+        olsrd6plgjsoninfo='"olsrd6plgjsoninfo":"on",'
+    fi
+    olsrd6plghttpinfo='"olsrd6plghttpinfo":"",'
+    if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6conf) != \#* ]]; then
+        olsrd6plghttpinfo='"olsrd6plghttpinfo":"on",'
+    fi
+    if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd6conf) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd6conf) != \#* ]]; then
+        olsrd6watchdog='"olsrd6watchdog":"on",'
+    fi
+    olsrd6plugins=$olsrd6plugins$olsrd6plgtxtinfo$olsrd6plgjsoninfo$olsrd6plghttpinfo$olsrd6watchdog
+
+    hna6list=''
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n "/hna6/I,/^}/ p" | grep -E ":" | sed -e 's/ /-/g'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        mask=$(echo $line | cut -d "-" -f 2)
+        hna6list=$hna6list'{"hna6address":"'$ip'","hna6mask":"'$mask'"},'
+    done
+    [ "$hna6list" ] && hna6list='"hna6list":['${hna6list%","}'],' || hna6list=''
+
+    lq6list=''
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -i linkqualitymult | grep -vi default |awk '{print $2"-"$3}'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        value=$(echo $line | cut -d "-" -f 2)
+        lq6list=$lq6list'{"lq6address":"'$ip'","lq6value":"'$value'"},'
+    done
+    [ "$lq6list" ] && lq6list='"lq6list":['${lq6list%","}'],' || lq6list=''
+
+    ###############################
+    #  IPv6 OLSRd LOAD done       #
+    ###############################
 
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
-    if [[ $olsrd4meshif == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default 2>/dev/null) == *"br"* ]]; then
+    if [[ $olsrd4meshif == *"br"* ]] || [[ $olsrd6meshif == *"br"* ]]; then
         if [[ $(grep -E "^ebtables\ \-P\ FORWARD\ DROP" /config/scripts/pre-config.d/ebtables.sh 2>/dev/null | wc -l) == 0 ]]; then
             if [ ! -d /config/scripts/pre-config.d ]; then
                 # create missing directory
@@ -636,14 +863,16 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"Pollrate":"'$(awk '/Pollrate/ {print $2}' $olsrd4conf)'"'
+    olsrdsettings=$olsrdsettings',"olsrd4Ip4Broadcast":"'$(awk '/Ip4Broadcast/ { print $2 }' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings'}]'
 
     # get all variables together for output
-    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4ip4broadcast$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
-    ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6hna$olsrd6lqmult$olsrd6plugins\"olsrd6config\":[$olsrd6interfaces]"
+    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
+    ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6plugins$hna6list$lq6list\"olsrd6config\":[$olsrd6interfaces]"
     echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
     echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]} }}"
     
+    [ -x /config/scripts/post-config.d/olsr-after-ntp.sh ] || write_ntp_script
 }
 
 # function called when you click apply
@@ -652,10 +881,10 @@ apply () {
     olsrdsetupscript=$(jq -M -r '.olsrdsetupscript' $INPUT 2>/dev/null)
     if [[ "$olsrdsetupscript" == "on" ]]; then
         if [[ ! -w $olsrdsetupscript ]]; then
-            if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
-                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile >/dev/null 2>/dev/null
+            if [[ -w $olsrddir$(basename $olsrdsetupscriptfile) ]]; then
+                cp -f $olsrddir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile >/dev/null 2>/dev/null
                 chmod +x $olsrdsetupscriptfile >/dev/null 2>/dev/null
-                rm $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
+                rm $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
             else
                 writesetupscript
                 cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile >/dev/null 2>/dev/null
@@ -665,7 +894,7 @@ apply () {
         fi
     else
         if [[ -w $olsrdsetupscriptfile ]]; then
-            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
+            cp -f $olsrdsetupscriptfile $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
         fi
         rm -f $olsrdsetupscriptfile >/dev/null 2>/dev/null
     fi
@@ -677,8 +906,10 @@ apply () {
     olsrd4enabled=$(jq -M -r '.olsrd4enabled' $INPUT 2>/dev/null)
     if [[ "$olsrd4enabled" == "on" ]]; then
         sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
+        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4def
     else
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4default
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4def
     fi
     olsrd4runonboot=$(jq -M -r '.olsrd4runonboot' $INPUT 2>/dev/null)
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
@@ -692,147 +923,333 @@ apply () {
         fi
     fi
     # set checked interfaces, else set default interface
-    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -vw br9)"
+    enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null)"
+    olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
     if [[ ! -z $enabledv4interfaces ]]; then
-        enabledv4interfaces=$(echo $enabledv4interfaces | sed 's/\ /\\\ /')
-        sed -i "s/^MESH_IF=.*/MESH_IF=\"$enabledv4interfaces\"/" $olsrd4default
+        for int in $enabledv4interfaces; do
+            defaultLQ=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .lqdefault' $INPUT)
+            mode=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .meshmode' $INPUT)
+            #autodetectchanges=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .autochanges' $INPUT)
+            [ "$mode" ] && new1='    Mode "'$mode'"\n' || new1=""
+            #[ "$autodetectchanges"=="on" ] && new2='    AutoDetectChanges yes\n' || new2=""
+            if [ "$defaultLQ" ]; then
+                (expr $defaultLQ '>=' 1 >/dev/null) && defaultLQ=1.00
+                (expr $defaultLQ '<=' 0 >/dev/null) && defaultLQ=0.01
+                new3='    LinkQualityMult default '$defaultLQ'\n'
+            else
+                new3=""
+            fi
+            if (echo "$olsrd4meshif" | grep -iwq $int); then
+                echo "Interface $int is already enabled, check params" >>$log
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/'"cInterface \"$int\" {\n$new1$new2$new3}" $olsrd4conf >>$log 2>>$log
+            else
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd4conf >>$log 2>>$log
+                sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf >>$log 2>>$log
+            fi
+        done
+        for int in $olsrd4meshif; do
+            if ! (echo "$enabledv4interfaces" | grep -iwq $int); then
+                echo "Interface $int must be disabled" >>$log
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd4conf >>$log 2>>$log
+             fi
+        done
     else
-        sed -i "s/^MESH_IF=.*/MESH_IF=wlan0/" $olsrd4default
+        echo "remove/comment all IFs in config" >>$log
+        for int in $olsrd4meshif; do
+            echo "Interface $int must be disabled" >>$log
+            sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd4conf >>$log 2>>$log
+        done
     fi
 
-    if [ $(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null | grep -cw br9) \> 0 ]; then
-        #interface eintragen wenn fehlt
-        if [ $(grep -c "Interface \"br9\" {" $olsrd4config) -eq 0 ]; then
-            linenumber=$(($(grep -n "MprCoverage" /config/user-data/olsrd4.conf | cut -d":" -f1)+1))
-            sed     -i $linenumber'i\
-Interface "br9" {\
-  Mode "silent"\
-}' $olsrd4config
-        fi
-    elif [ $(grep -c "Interface \"br9\" {" $olsrd4config) \> 0 ]; then
-        #interface rausnehmen!
-        sed -i "/^Interface \"br9\" {/,/^}/d" $olsrd4config
-    fi
-
-    # backup /etc/default/olsrd
-    cp -f $olsrd4default $cfgusrdir$(basename $olsrd4default).default > /dev/null
     # set ip4broadcast
-    olsrd4ip4broadcast=$(jq -M -r '.olsrd4Ip4Broadcast' $INPUT 2>/dev/null)
+    olsrd4ip4broadcast=$(jq -M -r '.olsrdsettings[].olsrd4Ip4Broadcast' $INPUT 2>/dev/null | head -1)
     #ensure a valid value for ip4broadcast
     valid_ip "$olsrd4ip4broadcast" || olsrd4ip4broadcast='255.255.255.255';
-    sed -i "s/Ip4Broadcast.*/Ip4Broadcast\ $olsrd4ip4broadcast/" $olsrd4config
-    # set v4 hna and lqmult
-    origIFS=$IFS
-    IFS=";"
-    # hna4 remove all entries in config
-    for hna in $(sed -n '/Hna4/,/}/p' $olsrd4config | sed '1,2d;$d' | sed '/\s*#.*$/d' | sed ':a;N;$!ba;s/\n/;/g'); do
-        sed -i "/$hna/d" $olsrd4config
+    sed -i "s/Ip4Broadcast.*/Ip4Broadcast\ $olsrd4ip4broadcast/" $olsrd4conf
+
+    #hna4 entries
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n "/hna4/I,/^}/ p" | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | sed -e 's/ /-/g'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        mask=$(mask_to_prefix $(echo $line | cut -d "-" -f 2))
+        jqmask=$(jq -M -r '.hna4list[] | select(.hna4address=="'$ip'") | .hna4mask' $INPUT)
+        if [ "$jqmask" ] && [ $jqmask -eq $mask ]; then
+            echo "hna $ip/$mask can stay" >>$log
+        else
+            echo "remove hna $ip/$mask" >>$log
+            subsearch=$(echo $line | cut -d "-" -f 2 | sed -e 's/\./\\./g')
+            ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+            sed -i "/hna4/I,/^}/ {s/[# \t]*"$ipsearch"[ \t]\+"$subsearch".*$//; /^$/d}" $olsrd4conf
+        fi
     done
-    # hna4 add entries from input
-    olsrd4hna=$(jq -M -r '.olsrd4Hna' $INPUT 2>/dev/null)
-    hna4linenr=$(grep -n "Hna4" $olsrd4config | cut -d: -f1)
-    for hna in $olsrd4hna; do
-        #ensure that entered values wont kill our olsrd - ignore hnas with wring IP or netmask
-        ip=$(echo $hna | cut -d" " -f1)
-        valid_ip "$ip" || continue;
-        mask=$(echo $hna | cut -d" " -f2)
-        valid_ip "$mask" || continue;
-        sed -i "$(($hna4linenr+2))i$hna" $olsrd4config
+    for line in $(jq -M -r '.hna4list[] | .hna4address+"-"+.hna4mask' $INPUT); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        prefix=$(echo $line | cut -d "-" -f 2)
+        mask=$(prefix_to_mask $prefix)
+        subsearch=$(echo $mask | sed -e 's/\./\\./g')
+        ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+        if ! (sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n "/hna4/I,/^}/ p" | grep -qE "[ \t]*$ipsearch[ \t]+$subsearch[# \t]*.*$"); then
+          echo "insert hna $ip/$mask" >>$log
+          sed -i "/Hna4/,/^}/s/^}/$ip $mask\n}/g" $olsrd4conf
+        fi
     done
+
     # lqmult remove all entries in config
-    for lqmult in $(grep LinkQualityMult $olsrd4config | sed '/\s*#.*$/d' | sed 's/\s*LinkQualityMult\s*//' | sed ':a;N;$!ba;s/\n/;/g'); do
-        sed -i "/$lqmult/d" $olsrd4config
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -i linkqualitymult | grep -vi default | awk '{print $2"-"$3}'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        jqlq=$(jq -M -r '.lq4list[] | select(.lq4address=="'$ip'") | .lq4value' $INPUT)
+        [ "$jqlq" ] || jqlq=1.00
+        (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
+        (expr $jqlq '<=' 0 >/dev/null) && jqlq=0.01
+        lq=$(echo $line | cut -d "-" -f 2)
+        if [ "$jqlq" ] && (expr $jqlq '=' $lq >/dev/null); then
+            echo "lq4 $ip/$lq can stay" >>$log
+        else
+            echo "remove lq4 $ip/$lq" >>$log
+            ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+            sed -i "/[# \t]*linkqualitymult[ \t]\+"$ipsearch"[ \t]\+.*$/Id" $olsrd4conf
+        fi
     done
-    # lqmult add entries from input
-    olsrd4lqmult=$(jq -M -r '.olsrd4LinkQualityMult' $INPUT 2>/dev/null)
-    lqmult4linenr=$(grep -m1 -n LinkQualityMult $olsrd4config | cut -d: -f1)
-    for lqmult in $olsrd4lqmult; do
-        #ensure that entered values wont kill our olsrd - ignore wring IPs and LQ-values out of range: 0.01 to 0.99
-        ip=$(echo $lqmult | cut -d" " -f1)
-        valid_ip "$ip" || continue;
-        mult=$(echo $lqmult | cut -d" " -f2)
-        [[ "$mult" =~ ^[0-9]+(\.[0-9]+)?$ ]] || continue;
-        [ $(printf "$mult\n1\n" | sort -g | tail -1) -eq 1 ] || continue;
-        sed -i "$(($lqmult4linenr+1))iLinkQualityMult\ $lqmult" $olsrd4config
+    for line in $(jq -M -r '.lq4list[] | .lq4address+"-"+.lq4value' $INPUT); do
+        jqlq=$(echo $line | cut -d "-" -f 2)
+        [ "$jqlq" ] || jqlq=1.00
+        (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
+        (expr $jqlq '<=' 0 >/dev/null) && jqlq=0.01
+        ip=$(echo $line | cut -d "-" -f 1)
+        ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+        if ! (grep -iqE "[# \t]*linkqualitymult[ \t]+$ipsearch[ \t]+.*" $olsrd4conf); then
+          echo "insert lq4 $ip/$jqlq" >>$log
+          sed -i "/InterfaceDefaults/,/^}/s/^}/LinkQualityMult $ip $jqlq\n}/g" $olsrd4conf
+        fi
     done
-    IFS=$origIFS
+
+    #plugins
     olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgtxtinfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd4conf
         fi
     else
-        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
     olsrd4plgjsoninfo=$(jq -M -r '.olsrd4plgjsoninfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgjsoninfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd4conf
         fi
     else
-        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
     olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plghttpinfo" == "on" ]]; then
-        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd4config
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8080"/' $olsrd4config
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd4conf
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8080"/' $olsrd4conf
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd4conf
         fi
     else
-        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4config
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
     olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT 2>/dev/null)
     if [[ "$olsrd4watchdog" == "on" ]]; then
-        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) -eq 0 ]; then
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) -eq 0 ]; then
             echo '#LoadPlugin "olsrd_watchdog.so.0.1"
 #{
   #PlParam "file" "/tmp/olsrd.watchdog"
   #PlParam "interval" "5"
 #}
-' >>$olsrd4config
+' >>$olsrd4conf
         fi
-        if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4config
-            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd.watchdog"/' $olsrd4config
-            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "interval" "5"/PlParam "interval" "5"/' $olsrd4config
-            date "+%s" >/tmp/olsrd.watchdog
-            touch /tmp/olsrd.watchdog.compare
+        if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd4conf
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd.watchdog"/' $olsrd4conf
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "interval" "5"/PlParam "interval" "5"/' $olsrd4conf
         fi
     else
-        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4config) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4config) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^/#/' $olsrd4config
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
-    #add cronjob? if missing, olsrd-autostart=on, executeable watchdogscript 
-    if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
-       [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
-       [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
-       [ -x /etc/olsrdwatchdog ] ; then
-      echo add watchdog to crontab >>$log
-      echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
-      chmod 644 /etc/cron.d/olsrdwatchdog
+
+
+    ###############################
+    #  IPv6 OLSRd APPLY function  #
+    ###############################
+    # enable olsrd6, if checked (will start if initscript is triggered) and run daemon on boot (when initscript is called)
+    olsrd6enabled=$(jq -M -r '.olsrd6enabled' $INPUT 2>/dev/null)
+    if [[ "$olsrd6enabled" == "on" ]]; then
+        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
+        sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6def
+    else
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6default
+        sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6def
     fi
-    #need to remove cronjob?
-    if [ ! -f $olsrd4default ] || 
-       [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") -eq 0 ] ||
-       [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
-       [ ! -x /etc/olsrdwatchdog ]; then
-       if [ -f /etc/cron.d/olsrdwatchdog ]; then
-          echo remove watchdog from crontab >>$log
-          rm /etc/cron.d/olsrdwatchdog >>$log 2>>$log
-       fi
+    olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT 2>/dev/null)
+    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+    if [[ "$olsrd6runonboot" == "on" ]]; then
+        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+            update-rc.d olsrd6 defaults >> /dev/null
+        fi
+    else
+        if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+            update-rc.d -f olsrd6 remove >> /dev/null
+        fi
+    fi
+    # set checked interfaces, else set default interface
+    enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT 2>/dev/null)"
+    olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
+    if [[ ! -z $enabledv6interfaces ]]; then
+        for int in $enabledv6interfaces; do
+            defaultLQ=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .lqdefault' $INPUT)
+            mode=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .meshmode' $INPUT)
+            #autodetectchanges=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .autochanges' $INPUT)
+            [ "$mode" ] && new1='    Mode "'$mode'"\n' || new1=""
+            #[ "$autodetectchanges"=="on" ] && new2='    AutoDetectChanges yes\n' || new2=""
+            if [ "$defaultLQ" ]; then
+                (expr $defaultLQ '>=' 1 >/dev/null) && defaultLQ=1.00
+                (expr $defaultLQ '<=' 0 >/dev/null) && defaultLQ=0.01
+                new3='    LinkQualityMult default '$defaultLQ'\n'
+            else
+                new3=""
+            fi
+            if (echo "$olsrd6meshif" | grep -iwq $int); then
+                echo "Interface $int is already enabled, check params" >>$log
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/'"cInterface \"$int\" {\n$new1$new2$new3}" $olsrd6conf >>$log 2>>$log
+            else
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd6conf >>$log 2>>$log
+                sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf >>$log 2>>$log
+            fi
+        done
+        for int in $olsrd6meshif; do
+            if ! (echo "$enabledv6interfaces" | grep -iwq $int); then
+                echo "Interface $int must be disabled" >>$log
+                sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd6conf >>$log 2>>$log
+             fi
+        done
+    else
+        echo "remove/comment all IFs in config" >>$log
+        for int in $olsrd6meshif; do
+            echo "Interface $int must be disabled" >>$log
+            sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/ d' $olsrd6conf >>$log 2>>$log
+        done
     fi
 
+    #hna6 entries
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n "/hna6/I,/^}/ p" | grep -E ":" | sed -e 's/ /-/g'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        mask=$(echo $line | cut -d "-" -f 2)
+        jqmask=$(jq -M -r '.hna6list[] | select(.hna6address=="'$ip'") | .hna6mask' $INPUT)
+        if [ "$jqmask" ] && [ $jqmask -eq $mask ]; then
+            echo "hna $ip/$mask can stay" >>$log
+        else
+            echo "remove hna $ip/$mask" >>$log
+            subsearch=$(echo $line | cut -d "-" -f 2 | sed -e 's/\./\\./g')
+            ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+            sed -i "/hna6/I,/^}/ {s/[# \t]*"$ipsearch"[ \t]\+"$subsearch".*$//; /^$/d}" $olsrd6conf
+        fi
+    done
+    for line in $(jq -M -r '.hna6list[] | .hna6address+"-"+.hna6mask' $INPUT); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        mask=$(echo $line | cut -d "-" -f 2)
+        subsearch=$(echo $mask | sed -e 's/\./\\./g')
+        ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+        if ! (sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n "/hna6/I,/^}/ p" | grep -qE "[ \t]*$ipsearch[ \t]+$subsearch[# \t]*.*$"); then
+          echo "insert hna $ip/$mask" >>$log
+          sed -i "/Hna6/,/^}/s/^}/$ip $mask\n}/g" $olsrd6conf
+        fi
+    done
 
-    ## OLSRD6 missing here
+    # lqmult remove all entries in config
+    for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -i linkqualitymult | grep -vi default | awk '{print $2"-"$3}'); do
+        ip=$(echo $line | cut -d "-" -f 1)
+        jqlq=$(jq -M -r '.lq6list[] | select(.lq6address=="'$ip'") | .lq6value' $INPUT)
+        [ "$jqlq" ] || jqlq=1.00
+        (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
+        (expr $jqlq '<=' 0 >/dev/null) && jqlq=0.01
+        lq=$(echo $line | cut -d "-" -f 2)
+        if [ "$jqlq" ] && (expr $jqlq '=' $lq >/dev/null); then
+            echo "lq6 $ip/$lq can stay" >>$log
+        else
+            echo "remove lq6 $ip/$lq" >>$log
+            ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+            sed -i "/[# \t]*linkqualitymult[ \t]\+"$ipsearch"[ \t]\+.*$/Id" $olsrd6conf
+        fi
+    done
+    for line in $(jq -M -r '.lq6list[] | .lq6address+"-"+.lq6value' $INPUT); do
+        jqlq=$(echo $line | cut -d "-" -f 2)
+        [ "$jqlq" ] || jqlq=1.00
+        (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
+        (expr $jqlq '<=' 0 >/dev/null) && jqlq=0.01
+        ip=$(echo $line | cut -d "-" -f 1)
+        ipsearch=$(echo $ip | sed -e 's/\./\\./g')
+        if ! (grep -iqE "[# \t]*linkqualitymult[ \t]+$ipsearch[ \t]+.*" $olsrd6conf); then
+          echo "insert lq6 $ip/$jqlq" >>$log
+          sed -i "/InterfaceDefaults/,/^}/s/^}/LinkQualityMult $ip $jqlq\n}/g" $olsrd6conf
+        fi
+    done
 
+    #plugins
+    olsrd6plgtxtinfo=$(jq -M -r '.olsrd6plgtxtinfo' $INPUT 2>/dev/null)
+    if [[ "$olsrd6plgtxtinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd6conf
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd6conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd6conf
+        fi
+    fi
+    olsrd6plgjsoninfo=$(jq -M -r '.olsrd6plgjsoninfo' $INPUT 2>/dev/null)
+    if [[ "$olsrd6plgjsoninfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd6conf
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd6conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd6conf
+        fi
+    fi
+    olsrd6plghttpinfo=$(jq -M -r '.olsrd6plghttpinfo' $INPUT 2>/dev/null)
+    if [[ "$olsrd6plghttpinfo" == "on" ]]; then
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd6conf
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8081"/PlParam "Port" "8081"/' $olsrd6conf
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0::/0"/PlParam "Net" "0::/0"/' $olsrd6conf
+        fi
+    else
+        if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd6conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd6conf
+        fi
+    fi
+    olsrd6watchdog=$(jq -M -r '.olsrd6watchdog' $INPUT 2>/dev/null)
+    if [[ "$olsrd6watchdog" == "on" ]]; then
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd6conf) -eq 0 ]; then
+            echo '#LoadPlugin "olsrd_watchdog.so.0.1"
+#{
+  #PlParam "file" "/tmp/olsrd6.watchdog"
+  #PlParam "interval" "5"
+#}
+' >>$olsrd6conf
+        fi
+        if [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd6conf) == \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^#//' $olsrd6conf
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "file" "\/tmp\/olsrd.watchdog"/PlParam "file" "\/tmp\/olsrd6.watchdog"/' $olsrd6conf
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/#PlParam "interval" "5"/PlParam "interval" "5"/' $olsrd6conf
+        fi
+    else
+        if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd6conf) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd6conf) != \#* ]]; then
+            sed -i "/LoadPlugin\ \"olsrd_watchdog/,/}/"'s/^/#/' $olsrd6conf
+        fi
+    fi
+
+    ###############################
+    #  IPv6 OLSRd APPLY end       #
+    ###############################
 
     # if one of enabled interfaces is a bridge, drop forwarded ethernet frames, else accept
     if [[ $(grep ^MESH_IF $olsrd4default) == *"br"* ]] || [[ $(grep ^MESH_IF $olsrd6default) == *"br"* ]]; then
@@ -919,59 +1336,62 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
                 chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
                 chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
             fi
-            #extract offline --> replaces download-procedure, Version 20171122, https://github.com/pocki80/ER-wizard-AutoUpdate
-            echo "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
+            #extract offline --> replaces download-procedure, Version 20180628, https://github.com/pocki80/ER-wizard-AutoUpdate
+            echo "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
+AHIAAA==
 " | base64 -d >/tmp/ER-wizard.tar.gz 2>>$log
             tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
@@ -1040,7 +1460,7 @@ JDrKTnXBmbogCAGwXoDHLthhGVl5v7yMNH8AuxILTtgpr6Pj6492nYUHrZya5safQD1wg0ThXjrCmHvM
               echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
               echo "Starting process..". >>$log
-              /etc/init.d/olsrd start
+              $olsrd4init start
               echo "PID done..." >>$log
             fi
           else
@@ -1048,7 +1468,7 @@ JDrKTnXBmbogCAGwXoDHLthhGVl5v7yMNH8AuxILTtgpr6Pj6492nYUHrZya5safQD1wg0ThXjrCmHvM
             echo "Killing process..." >>$log
             kill $running
             echo "Starting process..." >>$log
-            /etc/init.d/olsrd start
+            $olsrd4init start
             echo "PID done..." >>$log
           fi
         else
@@ -1086,6 +1506,3 @@ case "$ACTION" in
 esac
 
 echo "EdgeMAX OLSRd_V1 Wizard ended $(date +%Y-%m-%d/%H:%M:%S.%N) - Session="$$ >>$log
-
-# call arguments verbatim:
-#$@

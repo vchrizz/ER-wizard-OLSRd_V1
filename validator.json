@@ -4,12 +4,36 @@
     "required":"true"
    ,"ipv4":1
   }
+ ,"hna6address":{
+    "required":"true"
+   ,"ipv6":1
+  }
  ,"lq4address":{
     "required":"true"
    ,"ipv4":1
   }
+ ,"lq6address":{
+    "required":"true"
+   ,"ipv6":1
+  }
+ ,"hna4mask":{
+    "required":"true"
+   ,"number":1
+  }
+ ,"hna6mask":{
+    "required":"true"
+   ,"number":1
+  }
  ,"lq4value":{
     "required":"true"
+   ,"number":1
+  }
+ ,"lq6value":{
+    "required":"true"
+   ,"number":1
+  }
+ ,"lqdefault":{
+    "required":"false"
    ,"number":1
   }
  }
