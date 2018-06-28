@@ -36,5 +36,45 @@
     "required":"false"
    ,"number":1
   }
+ ,"txtplg4port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"jsonplg4port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"httpplg4port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"txtplg6port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"jsonplg6port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"httpplg6port":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"httpplg4ip":{
+    "required":"true"
+   ,"ipv4":1
+  }
+ ,"httpplg4mask":{
+    "required":"false"
+   ,"number":1
+  }
+ ,"httpplg6ip":{
+    "required":"true"
+   ,"ipv6":1
+  }
+ ,"httpplg6mask":{
+    "required":"false"
+   ,"number":1
+  }
  }
 }

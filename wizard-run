@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962a/201806270]
+# Version [0962a/201806271]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -13,7 +13,7 @@
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
 # *) wizard.html: wrong position of olsrd logo in mozilla firefox (10px lower than should be)
 # updates:
-# *) 06/2018 wizard totally re-written
+# *) 06/2018 wizard totally re-written, including olsrd 0.9.6.2-1 aka "pre-0.9.7"
 #
 
 ACTION=$1
@@ -408,12 +408,12 @@ setupv4olsrd () {
         # active interfaces in -i section
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
         for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
         done
@@ -425,11 +425,11 @@ setupv4olsrd () {
           [[ "$int" =~ '{' ]] && continue
           settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-          #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+          autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
           echo "## $int ##" >>$log
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
-          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
         done
@@ -500,12 +500,12 @@ setupv6olsrd () {
         # active interfaces in -i section
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
         for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd6.default | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
         done
@@ -517,11 +517,11 @@ setupv6olsrd () {
           [[ "$int" =~ '{' ]] && continue
           settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-          #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+          autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
           echo "## $int ##" >>$log
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
-          #[ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
         done
@@ -661,27 +661,92 @@ load () {
         done
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface .*'$v4ifinterface'.*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
         [ "$mode" ] && (echo "$mode" | grep -iqE "mesh|silent|ether") && mode='"meshmode":"'$mode'",' || mode=''
-        #[ "$autodetectchanges" ] && (echo "$autodetectchanges" | grep -iq "yes") && autodetectchanges='"autochanges":"on",' || autodetectchanges=''
+        [ "$autodetectchanges" ] && autodetectchanges='"autochanges":"'$autodetectchanges'",' || autodetectchanges=''
         [ "$defaultLQ" ] && defaultLQ='"lqdefault":"'$defaultLQ'",' || defaultLQ=''
         olsrd4interfaces=$olsrd4interfaces'{'$intfstatus$mode$autodetectchanges$defaultLQ'"olsrd4interface":"'${v4ifinterface}'","ipv4address":"'${v4ifaddress}'"},'
     done
     olsrd4interfaces=${olsrd4interfaces%","}
-    olsrd4plugins=''
-    olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"",'
-    if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]]; then
-        olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"on",'
+
+    #txtinfo4 plugin
+    [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]] && olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"on",' || olsrd4plgtxtinfo='"olsrd4plgtxtinfo":"",'
+    settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_txtinfo/I,/}/p' | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3}')
+    [ ! "$settings" ] && $(sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3}' | cut -d"#" -f1)
+    for line in $settings; do
+      param=$(echo $line | cut -d= -f1)
+      value=$(echo $line | cut -d= -f2)
+      (echo $line | grep -iq "port=") && [ ! "$txtplg4port" ] && txtplg4port=$(echo $line | cut -d= -f2) && continue
+      if (echo $line | grep -iq "accept=") && [ ! "$txtplg4who" ]; then
+        case $(echo $line | cut -d= -f2) in
+          "0.0.0.0") txtplg4who="any";;
+          "127.0.0.1") txtplg4who="localhost";;
+          *) txtplg4who="custom"; txtplg4custom=$(echo $line | cut -d= -f2);;
+        esac
+      fi
+    done
+    [ "$txtplg4port" ] || txtplg4port="2006"
+    [ "$txtplg4who" ] || txtplg4who="localhost"
+    txt4='"txtplg4port":"'$txtplg4port'","txtplg4who":"'$txtplg4who'","txtplg4custom":"'$txtplg4custom'",'
+
+    #jsoninfo4 plugin
+    [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) != \#* ]] && olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"on",' || olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"",'
+    settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_jsoninfo/I,/}/p' | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3}')
+    [ ! "$settings" ] && $(sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3}' | cut -d"#" -f1)
+    for line in $settings; do
+      param=$(echo $line | cut -d= -f1)
+      value=$(echo $line | cut -d= -f2)
+      (echo $line | grep -iq "port=") && [ ! "$jsonplg4port" ] && jsonplg4port=$(echo $line | cut -d= -f2) && continue
+      if (echo $line | grep -iq "accept=") && [ ! "$jsonplg4who" ]; then
+        case $(echo $line | cut -d= -f2) in
+          "0.0.0.0") jsonplg4who="any";;
+          "127.0.0.1") jsonplg4who="localhost";;
+          *) jsonplg4who="custom"; jsonplg4custom=$(echo $line | cut -d= -f2);;
+        esac
+      fi
+    done
+    [ "$jsonplg4port" ] || jsonplg4port="9090"
+    [ "$jsonplg4who" ] || jsonplg4who="localhost"
+    json4='"jsonplg4port":"'$jsonplg4port'","jsonplg4who":"'$jsonplg4who'","jsonplg4custom":"'$jsonplg4custom'",'
+    
+    
+    #httpinfo4 plugin
+    [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]] && olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",' || olsrd4plghttpinfo='"olsrd4plghttpinfo":"",'
+    settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_httpinfo/I,/}/p' | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3"="$4}')
+    [ ! "$settings" ] && $(sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -i plparam | grep -viE "#plparam.*0\.0\.0\.0.*0\.0\.0\.0|#plparam.*80\.23\.53\.22" | awk '{gsub("\"","",$0); print $2"="$3"="$4}' | cut -d"#" -f1)
+
+    httpplg4port=$(echo "$settings" | grep -i "port=" | cut -d= -f2)
+    [ "$httpplg4port" ] || httpplg4port="8080"
+
+    if   (echo "$settings" | grep -iqE "net=0\.0\.0\.0=0\.0\.0\.0|host=0\.0\.0\.0"); then httpplg4who="any"
+    elif [ $(echo "$settings" | grep -iEvc "127.0.0.1") -eq 0 ]; then httpplg4who="localhost"
+    elif [ $(echo "$settings" | grep -iEc "host|net") -eq 0 ]; then httpplg4who="localhost"
+    elif [ $(echo "$settings" | grep -iEc                         "net=10.\0.\0.\0=255.\0.\0.\0|net=78.\41.\112.\0=255.\255.\248.\0|net=193.\238.\156.\0=255.\255.\252.\0|net=185.\194.\20.\0=255.\255.\252.\0|host=127.\0.\0.\1") -eq 5 ] &&
+         [ $(echo "$settings" | grep -iEc "host|net" | grep -iEcv "net=10.\0.\0.\0=255.\0.\0.\0|net=78.\41.\112.\0=255.\255.\248.\0|net=193.\238.\156.\0=255.\255.\252.\0|net=185.\194.\20.\0=255.\255.\252.\0|host=127.\0.\0.\1") -eq 0 ]; then 
+            httpplg4who="funkfeuer"
+    else
+            httpplg4who="custom"
     fi
-    olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"",'
-    if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) != \#* ]]; then
-        olsrd4plgjsoninfo='"olsrd4plgjsoninfo":"on",'
+    if [ "$httpplg4who"=="funkfeuer" ] || [ "$httpplg4who"=="custom" ]; then
+        for line in $(echo "$settings" | grep -iE "net=|host="); do
+          param=$(echo $line | cut -d= -f1)
+          value=$(echo $line | cut -d= -f2)
+          if (echo $line | grep -iq "net="); then
+            httpplg4list=$httpplg4list'{"httpplg4ip":"'$(echo $line | cut -d= -f2)'","httpplg4mask":"'$(mask_to_prefix $(echo $line | cut -d= -f3))'"},'
+          else
+            httpplg4list=$httpplg4list'{"httpplg4ip":"'$(echo $line | cut -d= -f2)'","httpplg4mask":"32"},'
+          fi
+        done
+    elif [ "$httpplg4who"=="any" ]; then
+        httpplg4list=$httpplg4list'{"httpplg4ip":"0.0.0.0","httpplg4mask":"0"},'
+    else
+        httpplg4list=$httpplg4list'{"httpplg4ip":"127.0.0.1","httpplg4mask":"32"},'
     fi
-    olsrd4plghttpinfo='"olsrd4plghttpinfo":"",'
-    if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]]; then
-        olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",'
-    fi
+    httpplg4list=${httpplg4list%","}
+    [ "$httpplg4who" ] || httpplg4who="localhost"
+    http4='"httpplg4port":"'$httpplg4port'","httpplg4who":"'$httpplg4who'","httpplg4list":['$httpplg4list'],'
+
     olsrd4plgarprefresh='"olsrd4plgarprefresh":"",'
     if [[ $(grep LoadPlugin.*arprefresh $olsrd4conf) != \#* ]]; then
         olsrd4plgarprefresh='"olsrd4plgarprefresh":"on",'
@@ -689,7 +754,7 @@ load () {
     if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) \> 0 ] && [[ $(grep LoadPlugin.*olsrd_watchdog $olsrd4conf) != \#* ]]; then
         olsrd4watchdog='"olsrd4watchdog":"on",'
     fi
-    olsrd4plugins=$olsrd4plugins$olsrd4plgtxtinfo$olsrd4plgjsoninfo$olsrd4plghttpinfo$olsrd4plgarprefresh$olsrd4watchdog
+    olsrd4plugins=$olsrd4plgtxtinfo$txt4$olsrd4plgjsoninfo$json4$olsrd4plghttpinfo$http4$olsrd4plgarprefresh$olsrd4watchdog
 
     hna4list=''
     for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n "/hna4/I,/^}/ p" | grep -E "([0-9]{1,3}\.){3}[0-9]{1,3}" | sed -e 's/ /-/g'); do
@@ -736,10 +801,10 @@ load () {
         done
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface .*'$v6ifinterface'.*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
-        #autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
+        autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
         [ "$mode" ] && (echo "$mode" | grep -iqE "mesh|silent|ether") && mode='"meshmode":"'$mode'",' || mode=''
-        #[ "$autodetectchanges" ] && (echo "$autodetectchanges" | grep -iq "yes") && autodetectchanges='"autochanges":"on",' || autodetectchanges=''
+        [ "$autodetectchanges" ] && autodetectchanges='"autochanges":"'$autodetectchanges'",' || autodetectchanges=''
         [ "$defaultLQ" ] && defaultLQ='"lqdefault":"'$defaultLQ'",' || defaultLQ=''
         olsrd6interfaces=$olsrd6interfaces'{'$intfstatus$mode$autodetectchanges$defaultLQ'"olsrd6interface":"'${v6ifinterface}'","ipv6address":"'${v6ifaddress}'"},'
     done
@@ -828,7 +893,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     else
         CURRENTVERSION=$(head -n 8 $olsrdwizard | grep -i versioninfo= | awk -F"=" {'print $2'})
         if [ $((onlinecheck)) = 0 ]; then
-            GITVERSION=$(curl -sL --connect-timeout 2 --speed-time 2 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
+            GITVERSION=$(curl -sL --connect-timeout 2 --speed-time 2 -r 0-512 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
             if [ "$GITVERSION" ] && [ "$CURRENTVERSION" ]; then 
                 if [ $(($GITVERSION)) \> $(($CURRENTVERSION)) ]; then 
                     updatetext="new version available: "$GITVERSION", current: "$CURRENTVERSION >>$log 2>>$log
@@ -861,7 +926,6 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdsettings=$olsrdsettings',"MidInterval":"'$(awk '/MidInterval/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"HnaValidityTime":"'$(awk '/HnaValidityTime/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4conf)'"'
-    olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"Pollrate":"'$(awk '/Pollrate/ {print $2}' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings',"olsrd4Ip4Broadcast":"'$(awk '/Ip4Broadcast/ { print $2 }' $olsrd4conf)'"'
     olsrdsettings=$olsrdsettings'}]'
@@ -870,7 +934,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6plugins$hna6list$lq6list\"olsrd6config\":[$olsrd6interfaces]"
     echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
-    echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]} }}"
+    echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
     
     [ -x /config/scripts/post-config.d/olsr-after-ntp.sh ] || write_ntp_script
 }
@@ -929,9 +993,9 @@ apply () {
         for int in $enabledv4interfaces; do
             defaultLQ=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .lqdefault' $INPUT)
             mode=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .meshmode' $INPUT)
-            #autodetectchanges=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .autochanges' $INPUT)
+            autodetectchanges=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .autochanges' $INPUT)
             [ "$mode" ] && new1='    Mode "'$mode'"\n' || new1=""
-            #[ "$autodetectchanges"=="on" ] && new2='    AutoDetectChanges yes\n' || new2=""
+            [ "$autodetectchanges" ] && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
             if [ "$defaultLQ" ]; then
                 (expr $defaultLQ '>=' 1 >/dev/null) && defaultLQ=1.00
                 (expr $defaultLQ '<=' 0 >/dev/null) && defaultLQ=0.01
@@ -1107,9 +1171,9 @@ apply () {
         for int in $enabledv6interfaces; do
             defaultLQ=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .lqdefault' $INPUT)
             mode=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .meshmode' $INPUT)
-            #autodetectchanges=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .autochanges' $INPUT)
+            autodetectchanges=$(jq -M -r '.olsrd6config[] | select(.olsrd6interface=="'$int'") | .autochanges' $INPUT)
             [ "$mode" ] && new1='    Mode "'$mode'"\n' || new1=""
-            #[ "$autodetectchanges"=="on" ] && new2='    AutoDetectChanges yes\n' || new2=""
+            [ "$autodetectchanges" ] && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
             if [ "$defaultLQ" ]; then
                 (expr $defaultLQ '>=' 1 >/dev/null) && defaultLQ=1.00
                 (expr $defaultLQ '<=' 0 >/dev/null) && defaultLQ=0.01
