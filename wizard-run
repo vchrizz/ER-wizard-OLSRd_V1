@@ -32,15 +32,6 @@ olsrd6default='/etc/default/olsrd6'
 olsrd6init='/etc/init.d/olsrd6'
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 
-# default olsrd configuration files
-#olsrdconfig='/etc/olsrd/olsrd.conf'
-olsrd4bin='/usr/sbin/olsrd'
-olsrd6bin='/usr/sbin/olsrd6'
-# user-defined olsrd configuration files
-#olsrd4config="${cfgusrdir}olsrd4.conf"
-#olsrd6config="${cfgusrdir}olsrd6.conf"
-olsrd6config="${olsrddir}olsrd6.conf"
-
 #define update sources on github
 gitowner="vchrizz"
 gitrepo="ER-wizard-OLSRd_V1"
@@ -405,16 +396,22 @@ setupv4olsrd () {
     #migrate settings from former olsrd4.conf and olsrd4.default (this will happen only once)
     [ -f /config/user-data/olsrd.default ] && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' /config/user-data/olsrd.default | tr -d \") || conffile=""
     if [ "$conffile" ]; then
+        # basics
+        basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
+        [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd4conf
         # active interfaces in -i section
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+        weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
+        #interface-defaults
+        [ "$weight" ] && echo Weight: $weight >>$log && sed -i '/^[ \t]*interfacedefaults/I,/}/ { s/^[ \t]*weight[ \t]\+[0-9]\+.*$/Weight '$weight'/Ig }' $olsrd4conf
         for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
-          [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
-          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
+          [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
         done
         #
@@ -427,11 +424,13 @@ setupv4olsrd () {
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
           autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+          weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
           echo "## $int ##" >>$log
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
           [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
-          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd4conf
+          [ "$weight" ] && echo Weight: $weight >>$log && new4='    Weight '$weight'\n' || new4=""
+          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3$new4}\n#interfacesection-end/" $olsrd4conf
         done
         #
         # LQs and HNAs
@@ -497,16 +496,22 @@ setupv6olsrd () {
     #migrate settings from former olsrd6.conf and olsrd6.default (this will happen only once)
     [ -f /config/user-data/olsrd6.default ] && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' /config/user-data/olsrd6.default | tr -d \") || conffile=""
     if [ "$conffile" ]; then
+        # basics
+        basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
+        [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd6conf
         # active interfaces in -i section
         settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interfacedefaults/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+        weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
+        #interface-defaults
+        [ "$weight" ] && echo Weight: $weight >>$log && sed -i '/^[ \t]*interfacedefaults/I,/}/ { s/^[ \t]*weight[ \t]\+[0-9]\+.*$/Weight '$weight'/Ig }' $olsrd6conf
         for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd6.default | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
-          [ "$mode" ] && echo Mode: $mode && new1='    Mode "'$mode'"\n' || new1=""
-          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
-          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
+          [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
+          [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
+          [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
           sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
         done
         #
@@ -519,11 +524,13 @@ setupv6olsrd () {
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
           autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
+          weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
           echo "## $int ##" >>$log
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
           [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
           [ "$defaultLQ" ] && echo LinkQualityMult-Default: $defaultLQ >>$log && new3='    LinkQualityMult default '$defaultLQ'\n' || new3=""
-          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3}\n#interfacesection-end/" $olsrd6conf
+          [ "$weight" ] && echo Weight: $weight >>$log && new4='    Weight '$weight'\n' || new4=""
+          sed -i '/#interfacesection-end/'"s/#interfacesection-end/Interface \"$int\" {\n$new1$new2$new3$new4}\n#interfacesection-end/" $olsrd6conf
         done
         #
         # LQs and HNAs
@@ -714,7 +721,7 @@ load () {
     #httpinfo4 plugin
     [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]] && olsrd4plghttpinfo='"olsrd4plghttpinfo":"on",' || olsrd4plghttpinfo='"olsrd4plghttpinfo":"",'
     settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_httpinfo/I,/}/p' | grep -i plparam | awk '{gsub("\"","",$0); print $2"="$3"="$4}')
-    [ ! "$settings" ] && $(sed -n '/^[ \t]*loadplugin[ \"\t]*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -i plparam | grep -viE "#plparam.*0\.0\.0\.0.*0\.0\.0\.0|#plparam.*80\.23\.53\.22" | awk '{gsub("\"","",$0); print $2"="$3"="$4}' | cut -d"#" -f1)
+    [ "$settings" ] || settings=$(sed -n '/^[# \t]*loadplugin[ \"\t]*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -i plparam | grep -viE "#plparam.*0\.0\.0\.0.*0\.0\.0\.0|#plparam.*80\.23\.53\.22" | awk '{gsub("\"","",$0); print $3"="$4"="$5}')
 
     httpplg4port=$(echo "$settings" | grep -i "port=" | cut -d= -f2)
     [ "$httpplg4port" ] || httpplg4port="8080"
@@ -722,8 +729,8 @@ load () {
     if   (echo "$settings" | grep -iqE "net=0\.0\.0\.0=0\.0\.0\.0|host=0\.0\.0\.0"); then httpplg4who="any"
     elif [ $(echo "$settings" | grep -iEvc "127.0.0.1") -eq 0 ]; then httpplg4who="localhost"
     elif [ $(echo "$settings" | grep -iEc "host|net") -eq 0 ]; then httpplg4who="localhost"
-    elif [ $(echo "$settings" | grep -iEc                         "net=10.\0.\0.\0=255.\0.\0.\0|net=78.\41.\112.\0=255.\255.\248.\0|net=193.\238.\156.\0=255.\255.\252.\0|net=185.\194.\20.\0=255.\255.\252.\0|host=127.\0.\0.\1") -eq 5 ] &&
-         [ $(echo "$settings" | grep -iEc "host|net" | grep -iEcv "net=10.\0.\0.\0=255.\0.\0.\0|net=78.\41.\112.\0=255.\255.\248.\0|net=193.\238.\156.\0=255.\255.\252.\0|net=185.\194.\20.\0=255.\255.\252.\0|host=127.\0.\0.\1") -eq 0 ]; then 
+    elif [ $(echo "$settings" | grep -iEc                         "net=10\.0\.0\.0=255\.0\.0\.0|net=78\.41\.112\.0=255\.255\.248\.0|net=193\.238\.156\.0=255\.255\.252\.0|net=185\.194\.20\.0=255\.255\.252\.0|host=127\.0\.0\.1") -eq 5 ] &&
+         [ $(echo "$settings" | grep -iE  "host|net" | grep -iEcv "net=10\.0\.0\.0=255\.0\.0\.0|net=78\.41\.112\.0=255\.255\.248\.0|net=193\.238\.156\.0=255\.255\.252\.0|net=185\.194\.20\.0=255\.255\.252\.0|host=127\.0\.0\.1") -eq 0 ]; then 
             httpplg4who="funkfeuer"
     else
             httpplg4who="custom"
@@ -1086,6 +1093,9 @@ apply () {
         fi
     done
 
+    # TODO 20180629 
+    #-> disablePlugin ok
+    #enablePlugin: replace full block: filename, managedPlParams, ignore unmanagedPlParams
     #plugins
     olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgtxtinfo" == "on" ]]; then
@@ -1109,16 +1119,59 @@ apply () {
     fi
     olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plghttpinfo" == "on" ]]; then
+        #if disabled, enable
         if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) == \#* ]]; then
+            #remove "#" from front
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^#//' $olsrd4conf
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Port" "8080"/PlParam "Port" "8080"/' $olsrd4conf
-            sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/#PlParam "Net" "0.0.0.0 0.0.0.0"/PlParam "Net" "0.0.0.0 0.0.0.0"/' $olsrd4conf
         fi
+        #check for port
+        jqport=$(jq -M -r '.httpplg4port' $INPUT)
+        #change/uncomment existing line
+        (sed -n '/^[ \t]*loadplugin.*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^.*plparam.*port.*$/  PlParam "Port" "'$jqport'"/I' $olsrd4conf
+        #add line if missing
+        (sed -n '/^[# \t]*loadplugin.*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"Port"') || sed -i '/LoadPlugin\ \"olsrd_http/,/}/ {s/{/{\n  PlParam "Port" "'$jqport'"/ }' $olsrd4conf
+        #check PlParams for host and net
+        case "$(jq -r '.httpplg4who' $INPUT)" in
+          "any")       liste="0.0.0.0/0";;
+          "funkfeuer") liste=$(echo -e "127.0.0.1/32\n10.0.0.0/8\n78.41.112.0/21\n193.238.156.0/22\n185.194.20.0/22");;
+          "custom")    liste=$(jq -M -r '.httpplg4list[] | .httpplg4ip+"/"+.httpplg4mask' $INPUT);;
+          *)           liste="127.0.0.1/32";;
+        esac
+        #add or uncomment wizard-list
+        for line in $liste; do
+            (echo "$line" | grep -q "/") || continue;
+            prefix=$(echo "$line" | cut -d"/" -f2)
+            [ $prefix -ge 0 ] && [ $prefix -le 32 ] && mask=" "$(prefix_to_mask $prefix) || continue
+            [ $prefix -eq 32 ] && param="Host" && mask="" || param="Net"
+            ip=$(echo "$line" | cut -d"/" -f1)
+            #uncomment existing line if commented
+            (sed -n '/^[# \t]*loadplugin.*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -qiE '[# \t]+plparam[ \t]+"'$param'"[ \t]+"'$ip"$mask"'"') && 
+                sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^[# \t]\+plparam[ \t]\+"'$param'"[ \t]\+"'$ip"$mask"'"/  PlParam "'$param'"   "'$ip"$mask"'"/I' $olsrd4conf
+            #add line if missing
+            (sed -n '/^[# \t]*loadplugin.*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -qiE '.*plparam[ \t]+"'$param'"[ \t]+"'$ip"$mask"'"') || 
+                sed -i '/LoadPlugin\ \"olsrd_http/,/}/ {s/}/  PlParam "'$param'"   "'$ip"$mask"'"\n}/ }' $olsrd4conf
+        done
+        #check and disable existing params
+        for line in $(sed -n '/^[ \t]*loadplugin.*olsrd_httpinfo/I,/}/p' $olsrd4conf | grep -iE '^[ \t]*plparam.*"net"|^[ \t]*plparam.*"host"'|  awk '{gsub("\"","",$0); printf $3; if ($2=="Net") {print "+"$4;} else {print "+255.255.255.255";}}'); do
+            ip=$(echo $line | cut -d+ -f1)
+            mask=" "$(echo $line | cut -d+ -f2)
+            if ! (echo "$liste" | grep -qiE "$ip.*$(mask_to_prefix $mask)"); then
+                pre=$(mask_to_prefix $mask)
+                [ $pre -eq 32 ] && param="Host" && mask="" || param="Net"
+                sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^.*plparam[ \t]\+"'$param'"[ \t]\+"'$ip"$mask"'"/  #PlParam "'$param'"   "'$ip"$mask"'"/I' $olsrd4conf
+            fi 
+        done
     else
+        #if enabled, disable it
         if [[ $(grep LoadPlugin.*olsrd_httpinfo $olsrd4conf) != \#* ]]; then
+            #disable plugin by adding "#" in front of line
             sed -i "/LoadPlugin\ \"olsrd_http/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
+
+
+
+
     olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT 2>/dev/null)
     if [[ "$olsrd4watchdog" == "on" ]]; then
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) -eq 0 ]; then
