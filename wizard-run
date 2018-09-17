@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201806130]
+# Version [0903k/201809170]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -34,6 +34,7 @@
 # *) 09/2017 added option to enable/use watchdog plugin with watchdog script
 # *) 11/2017 fixed wizard-run: downgraded olsrd packages to version 0.9.0.3-1 for mipsel architecture
 # *) 11/2017 fixed wizard-run: downgraded olsrd packages to version 0.9.0.3-1 for mips architecture
+# *) 09/2018 changed default olsrd timings to reduce overall olsrd network traffic
 #
 
 ACTION=$1
@@ -408,6 +409,46 @@ if [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init) -eq 0 ]; then
 fi
 ## END patch for installing this wizard onto a existing 0.9.0.3 wizard END ##
 #############################################################################
+
+###update default intervals to reduce olsr management traffic
+#define new settings
+Pollrate="0.1"
+HelloInterval="5.0"
+HelloValidityTime="100.0"
+TcInterval="3.0"
+TcValidityTime="500.0"
+MidInterval="30.0"
+MidValidityTime="500.0"
+HnaInterval="30.0"
+HnaValidityTime="500.0"
+#apply new settings
+if [ -f $olsrd4config ]; then 
+    [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config
+    [ "$HelloInterval" ] && sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config
+    [ "$HelloValidityTime" ] && sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config
+    [ "$TcInterval" ] && sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config
+    [ "$TcValidityTime" ] && sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config
+    [ "$MidInterval" ] && sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config
+    [ "$MidValidityTime" ] && sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config
+    [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config
+    [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config
+    #restart olsrd
+    /etc/init.d/olsrd restart
+fi
+if [ -f $olsrd6config ]; then 
+    [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd6config
+    [ "$HelloInterval" ] && sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd6config
+    [ "$HelloValidityTime" ] && sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd6config
+    [ "$TcInterval" ] && sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd6config
+    [ "$TcValidityTime" ] && sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd6config
+    [ "$MidInterval" ] && sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd6config
+    [ "$MidValidityTime" ] && sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd6config
+    [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd6config
+    [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd6config
+    #restart olsrd
+    /etc/init.d/olsrd6 restart
+fi
+###done update default intervals to reduce olsr management traffic
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
@@ -19471,6 +19512,28 @@ setupv4olsrd () {
         sed -i "s/olsrd_dyn_gw.so.0.5/olsrd_dyn_gw.so.0.3/g" $olsrd4config 2>>$log
         sed -i "s/olsrd_nameservice.so.0.4/olsrd_nameservice.so.0.3/g" $olsrd4config 2>>$log
     fi
+    #fix timings to match defaults
+    Pollrate="0.1"
+    HelloInterval="5.0"
+    HelloValidityTime="100.0"
+    TcInterval="3.0"
+    TcValidityTime="500.0"
+    MidInterval="30.0"
+    MidValidityTime="500.0"
+    HnaInterval="30.0"
+    HnaValidityTime="500.0"
+    #apply new settings
+    if [ -f $olsrd4config ]; then 
+        [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config
+        [ "$HelloInterval" ] && sed -i "s/HelloInterval.*/HelloInterval $HelloInterval/" $olsrd4config
+        [ "$HelloValidityTime" ] && sed -i "s/HelloValidityTime.*/HelloValidityTime $HelloValidityTime/" $olsrd4config
+        [ "$TcInterval" ] && sed -i "s/TcInterval.*/TcInterval $TcInterval/" $olsrd4config
+        [ "$TcValidityTime" ] && sed -i "s/TcValidityTime.*/TcValidityTime $TcValidityTime/" $olsrd4config
+        [ "$MidInterval" ] && sed -i "s/MidInterval.*/MidInterval $MidInterval/" $olsrd4config
+        [ "$MidValidityTime" ] && sed -i "s/MidValidityTime.*/MidValidityTime $MidValidityTime/" $olsrd4config
+        [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config
+        [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config
+    fi
     #add logging to /etc/init.d/olsrd
     if [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
         echo "Add logging to /etc/init.d/olsrd" >>$log
@@ -19862,7 +19925,6 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdsettings=$olsrdsettings',"MidInterval":"'$(awk '/MidInterval/ {print $2}' $olsrd4config)'"'
     olsrdsettings=$olsrdsettings',"HnaValidityTime":"'$(awk '/HnaValidityTime/ {print $2}' $olsrd4config)'"'
     olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4config)'"'
-    olsrdsettings=$olsrdsettings',"HnaInterval":"'$(awk '/HnaInterval/ {print $2}' $olsrd4config)'"'
     olsrdsettings=$olsrdsettings',"Pollrate":"'$(awk '/Pollrate/ {print $2}' $olsrd4config)'"'
     olsrdsettings=$olsrdsettings'}]'
 
@@ -20170,12 +20232,12 @@ Interface "br9" {\
 
     [ "$Pollrate" == "null" ] && Pollrate="0.1"
     [ "$HelloInterval" == "null" ] && HelloInterval="5.0"
-    [ "$HelloValidityTime" == "null" ] && HelloValidityTime="125.0"
-    [ "$TcInterval" == "null" ] && TcInterval="2.0"
+    [ "$HelloValidityTime" == "null" ] && HelloValidityTime="100.0"
+    [ "$TcInterval" == "null" ] && TcInterval="3.0"
     [ "$TcValidityTime" == "null" ] && TcValidityTime="500.0"
-    [ "$MidInterval" == "null" ] && MidInterval="25.0"
+    [ "$MidInterval" == "null" ] && MidInterval="30.0"
     [ "$MidValidityTime" == "null" ] && MidValidityTime="500.0"
-    [ "$HnaInterval" == "null" ] && HnaInterval="25.0"
+    [ "$HnaInterval" == "null" ] && HnaInterval="30.0"
     [ "$HnaValidityTime" == "null" ] && HnaValidityTime="500.0"
 
     [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd4config $olsrd6config
