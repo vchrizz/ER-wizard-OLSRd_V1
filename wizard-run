@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962a/201807100]
+# Version [0962a/20181001]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -21,13 +21,12 @@ INPUT=$2
 
 log="/var/log/0xffolsrd.log"
 cfgusrdir="/config/user-data/"
-olsrddir="/config/olsrd/"
-olsrd4conf="${olsrddir}olsrd4.conf"
-olsrd4def="${olsrddir}olsrd4default"
+olsrd4conf="${cfgusrdir}olsrd4.conf"
+olsrd4def="${cfgusrdir}olsrd4default"
 olsrd4default='/etc/default/olsrd'
 olsrd4init='/etc/init.d/olsrd'
-olsrd6conf="${olsrddir}olsrd6.conf"
-olsrd6def="${olsrddir}olsrd6default"
+olsrd6conf="${cfgusrdir}olsrd6.conf"
+olsrd6def="${cfgusrdir}olsrd6default"
 olsrd6default='/etc/default/olsrd6'
 olsrd6init='/etc/init.d/olsrd6'
 olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
@@ -43,19 +42,43 @@ gitbranch="prepare-097"
 
 echo "EdgeMAX OLSRd_V1 Wizard started $(date +%Y-%m-%d/%H:%M:%S.%N) - Session="$$ >>$log
 
+############################
+### BETA TESTING CLEANUP ###
+if [ -d /config/olsrd ] && [ -f /config/olsrd/olsrd4.conf ]; then
+    # change path in defaults
+    olsrd4cnfesc=$(echo /config/user-data/olsrd4.conf | sed -e 's/[\/&]/\\&/g')
+    sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd4cnfesc\"/" /config/olsrd/olsrd4default
+    olsrd6cnfesc=$(echo /config/user-data/olsrd6.conf | sed -e 's/[\/&]/\\&/g')
+    sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd6cnfesc\"/" /config/olsrd/olsrd6default
+    #copy over default files
+    cp /config/olsrd/olsrd4default /etc/default/olsrd
+    cp /config/olsrd/olsrd6default /etc/default/olsrd6
+    # move files
+    mv /config/olsrd/olsrd4.conf /config/user-data
+    mv /config/olsrd/olsrd6.conf /config/user-data
+    mv /config/olsrd/olsrd4default /config/user-data
+    mv /config/olsrd/olsrd6default /config/user-data
+    #silently restart daemons
+    /etc/init.d/olsrd  restart >/dev/null 2>/dev/null
+    /etc/init.d/olsrd6 restart >/dev/null 2>/dev/null
+    #clean dir
+    rm -r /config/olsrd
+fi
+### BETA TESTING CLEANUP ###
+############################
+
 #function to write setup-script
 writesetupscript () {
     cat >/tmp/olsrdsetupscriptfile <<'ENDSCRIPTCONTENT'
 #!/bin/bash
 log="/var/log/0xffolsrd.log"
 cfgusrdir="/config/user-data/"
-olsrddir="/config/olsrd/"
-olsrd4conf="${olsrddir}olsrd4.conf"
-olsrd4def="${olsrddir}olsrd4default"
+olsrd4conf="${cfgusrdir}olsrd4.conf"
+olsrd4def="${cfgusrdir}olsrd4default"
 olsrd4default='/etc/default/olsrd'
 olsrd4init='/etc/init.d/olsrd'
-olsrd6conf="${olsrddir}olsrd6.conf"
-olsrd6def="${olsrddir}olsrd6default"
+olsrd6conf="${cfgusrdir}olsrd6.conf"
+olsrd6def="${cfgusrdir}olsrd6default"
 olsrd6default='/etc/default/olsrd6'
 olsrd6init='/etc/init.d/olsrd6'
 echo "Running olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
@@ -171,8 +194,8 @@ if [ -f $olsrdsetupscriptfile ]; then    #enabled
     chmod +x $olsrdsetupscriptfile
     rm /tmp/olsrdsetupscriptfile
 else    #disabled, save to user-data
-    cp -f /tmp/olsrdsetupscriptfile $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null
-    chmod +x $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null
+    cp -f /tmp/olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null
+    chmod +x $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null
     rm /tmp/olsrdsetupscriptfile
 fi
 
@@ -30754,19 +30777,19 @@ installolsrd () {
             else
               echo "PID from process ("$running") not matching pid-file ("$pidfile")!" >>$log
               echo "Killing process..." >>$log
-              kill $running
+              kill $running >>$log
               echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
               echo "Starting process..." >>$log
-              $olsrd4init start
+              $olsrd4init start >>$log
               echo "PID done..." >>$log
             fi
           else
             echo "No PID for process ("$running") found!" >>$log
             echo "Killing process..." >>$log
-            kill $running
+            kill $running >>$log
             echo "Starting process..." >>$log
-            $olsrd4init start
+            $olsrd4init start >>$log
             echo "PID done..." >>$log
           fi
         else
@@ -30792,21 +30815,25 @@ installolsrd () {
 
 setupv4olsrd () {
     #on first install, on migration: create config dir and file
-    [ -d $olsrddir ] || mkdir $olsrddir
+    [ -d $cfgusrdir ] || mkdir $cfgusrdir
     [ -f $olsrd4conf ] || cp /etc/olsrd/olsrd.conf $olsrd4conf
     if [ -f $olsrd4def ]; then
         #on update: restore olsrd-default (for START_OLSRD and DAEMON_OPT)
         cp $olsrd4def $olsrd4default
     else
-        #on first install, on migration: add config-file to olsrd-default and save it in config dir
+        #on first install, on migration: add path to config-file into olsrd-default and save it in config dir
         olsrd4cnfesc=$(echo $olsrd4conf | sed -e 's/[\/&]/\\&/g')
         sed -i '/DAEMON_OPTS/'"s/\".*/\"-d \$DEBUGLEVEL -f $olsrd4cnfesc\"/" $olsrd4default
         cp $olsrd4default $olsrd4def
     fi
     #on migration
     #migrate settings from former olsrd4.conf and olsrd4.default (this will happen only once)
-    [ -f /config/user-data/olsrd.default ] && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' /config/user-data/olsrd.default | tr -d \") || conffile=""
+    (grep DAEMON_OPTS= $olsrd4default | grep -q MESH_IF) && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd4default | tr -d \") || conffile=""
     if [ "$conffile" ]; then
+        mv $conffile /config/user-data/olsrd4.bak
+        conffile="/config/user-data/olsrd4.bak"
+        cp /etc/olsrd/olsrd.conf $olsrd4conf
+        mv /config/user-data/olsrd.default /config/user-data/olsrd.default.bak
         # basics
         basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
         [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd4conf
@@ -30818,7 +30845,7 @@ setupv4olsrd () {
         weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
         #interface-defaults
         [ "$weight" ] && echo Weight: $weight >>$log && sed -i '/^[ \t]*interfacedefaults/I,/}/ { s/^[ \t]*weight[ \t]\+[0-9]\+.*$/Weight '$weight'/Ig }' $olsrd4conf
-        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default | awk -F'=' '{print $2}' | tr -d '"'); do
+        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default.bak | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
           [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
@@ -30853,7 +30880,7 @@ setupv4olsrd () {
         [ "$hna4" ] && sed -i "/Hna4/,/^}/s/^}/$hna4 \n}/g" $olsrd4conf
         #
         #enabled on boot
-        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd.default 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
+        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd.default.bak 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
         [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##" >>$log
         if [ "$startonboot" -eq 1 ]; then
             sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
@@ -30864,23 +30891,18 @@ setupv4olsrd () {
         fi
         #
         #plugins and pluginparameters
-        plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
+        plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
             file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
             [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
             echo "## $plugin ## Filename $file" >>$log
-            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.conf 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
+            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
             #first delete pluginblock, then append old block with current files
             sed -i '/^[# \t]*loadplugin[ \t]\+"'$plugin'/I,/}/ d' $olsrd4conf 2>>$log
-            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' /config/user-data/olsrd4.conf 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd4conf 2>>$log
+            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' $conffile 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd4conf 2>>$log
           done
         fi
-        #
-        #migration done, now avoid to do that again
-        #move old files to .bak
-        mv /config/user-data/olsrd.default /config/user-data/olsrd.default.bak
-        mv $conffile /config/user-data/olsrd4.bak
     fi
     #trim tailing blanks/tabs
     sed -i 's/[ \t]*$//' $olsrd4conf
@@ -30891,7 +30913,7 @@ setupv4olsrd () {
 # (olsrd2 is able to run v4 and v6 in one instance)
 setupv6olsrd () {
     #on first install, on migration: create config dir and file
-    [ -d $olsrddir ] || mkdir $olsrddir
+    [ -d $cfgusrdir ] || mkdir $cfgusrdir
     [ -f $olsrd6conf ] || cp /etc/olsrd/olsrd6.conf $olsrd6conf
     if [ -f $olsrd6def ]; then
         #on update: restore olsrd-default (for START_OLSRD and DAEMON_OPT)
@@ -30905,8 +30927,12 @@ setupv6olsrd () {
     
     #on migration
     #migrate settings from former olsrd6.conf and olsrd6.default (this will happen only once)
-    [ -f /config/user-data/olsrd6.default ] && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' /config/user-data/olsrd6.default | tr -d \") || conffile=""
+    (grep DAEMON_OPTS= $olsrd6default | grep -q MESH_IF) && conffile=$(awk -F"-f " '/DAEMON_OPTS/{print $2}' $olsrd6default | tr -d \") || conffile=""
     if [ "$conffile" ]; then
+        mv $conffile /config/user-data/olsrd6.bak
+        conffile="/config/user-data/olsrd6.bak"
+        cp /etc/olsrd/olsrd6.conf $olsrd6conf
+        mv /config/user-data/olsrd6.default /config/user-data/olsrd6.default.bak
         # basics
         basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
         [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd6conf
@@ -30918,7 +30944,7 @@ setupv6olsrd () {
         weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
         #interface-defaults
         [ "$weight" ] && echo Weight: $weight >>$log && sed -i '/^[ \t]*interfacedefaults/I,/}/ { s/^[ \t]*weight[ \t]\+[0-9]\+.*$/Weight '$weight'/Ig }' $olsrd6conf
-        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd6.default | awk -F'=' '{print $2}' | tr -d '"'); do
+        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd6.default.bak | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
           [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
@@ -30953,7 +30979,7 @@ setupv6olsrd () {
         [ "$hna6" ] && sed -i "/hna6/,/^}/s/^}/$hna6 \n}/g" $olsrd6conf
         #
         #enabled on boot
-        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.default 2>>$log | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
+        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.default.bak 2>>$log | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
         [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##" >>$log
         if [ "$startonboot" -eq 1 ]; then
             sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd6default
@@ -30964,23 +30990,18 @@ setupv6olsrd () {
         fi
         #
         #plugins and pluginparameters
-        plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.conf | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
+        plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
             file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
             [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
             echo "## $plugin ## Filename $file" >>$log
-            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd6.conf 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
+            sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
             #first delete pluginblock, then append old block with current files
             sed -i '/^[# \t]*loadplugin[ \t]\+"'$plugin'/I,/}/ d' $olsrd6conf 2>>$log
-            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' /config/user-data/olsrd6.conf 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd6conf 2>>$log
+            sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' $conffile 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd6conf 2>>$log
           done
         fi
-        #
-        #migration done, now avoid to do that again
-        #move old files to .bak
-        mv /config/user-data/olsrd6.default /config/user-data/olsrd6.default.bak
-        mv $conffile /config/user-data/olsrd6.bak
     fi
     #trim tailing blanks/tabs
     sed -i 's/[ \t]*$//' $olsrd6conf
@@ -31003,8 +31024,8 @@ load () {
             setupv6olsrd >>$log 2>>$log
             echo "olsrd packages installed and configured. all done." >>$log
             olsrdpkgstatus="\"pkgstatus\":\"success: running olsrd installation ... completed.\""
-            /etc/init.d/olsrd restart
-            /etc/init.d/olsrd6 restart
+            /etc/init.d/olsrd restart >>$log 2>>$log
+            /etc/init.d/olsrd6 restart >>$log 2>>$log
         else
             olsrdpkgstatus="\"pkgstatus\":\"error: not installed, download or install problem. check $log\""
         fi
@@ -31022,8 +31043,8 @@ load () {
                 setupv4olsrd >>$log 2>>$log
                 setupv6olsrd >>$log 2>>$log
                 echo "olsrd packages installed and configured. done." >>$log
-                /etc/init.d/olsrd restart
-                /etc/init.d/olsrd6 restart
+                /etc/init.d/olsrd restart >>$log 2>>$log
+                /etc/init.d/olsrd6 restart >>$log 2>>$log
             fi
         else
             echo "latest available olsrd packages are already installed. (found in $cfgusrdir)" >>$log
@@ -31202,7 +31223,7 @@ load () {
     [[ -w $olsrd6default && $(grep START_OLSRD $olsrd6default) != \#* ]] && olsrd6enabled='"olsrd6enabled":"on",' || olsrd6enabled='"olsrd6enabled":"",'
 
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd4runonboot":"",'
+    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd6runonboot":"",'
 
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
@@ -31315,7 +31336,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     else
         CURRENTVERSION=$(head -n 8 $olsrdwizard | grep -i versioninfo= | awk -F"=" {'print $2'})
         if [ $((onlinecheck)) = 0 ]; then
-            GITVERSION=$(curl -sL --connect-timeout 2 --speed-time 2 -r 0-512 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
+            GITVERSION=$(curl -s --connect-timeout 2 --speed-time 2 -r 0-512 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
             if [ "$GITVERSION" ] && [ "$CURRENTVERSION" ]; then 
                 if [ $(($GITVERSION)) \> $(($CURRENTVERSION)) ]; then 
                     updatetext="new version available: "$GITVERSION", current: "$CURRENTVERSION >>$log 2>>$log
@@ -31367,10 +31388,10 @@ apply () {
     olsrdsetupscript=$(jq -M -r '.olsrdsetupscript' $INPUT 2>/dev/null)
     if [[ "$olsrdsetupscript" == "on" ]]; then
         if [[ ! -w $olsrdsetupscript ]]; then
-            if [[ -w $olsrddir$(basename $olsrdsetupscriptfile) ]]; then
-                cp -f $olsrddir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile >/dev/null 2>/dev/null
+            if [[ -w $cfgusrdir$(basename $olsrdsetupscriptfile) ]]; then
+                cp -f $cfgusrdir$(basename $olsrdsetupscriptfile) $olsrdsetupscriptfile >/dev/null 2>/dev/null
                 chmod +x $olsrdsetupscriptfile >/dev/null 2>/dev/null
-                rm $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
+                rm $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
             else
                 writesetupscript
                 cp -f /tmp/olsrdsetupscriptfile $olsrdsetupscriptfile >/dev/null 2>/dev/null
@@ -31380,7 +31401,7 @@ apply () {
         fi
     else
         if [[ -w $olsrdsetupscriptfile ]]; then
-            cp -f $olsrdsetupscriptfile $olsrddir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
+            cp -f $olsrdsetupscriptfile $cfgusrdir$(basename $olsrdsetupscriptfile) >/dev/null 2>/dev/null
         fi
         rm -f $olsrdsetupscriptfile >/dev/null 2>/dev/null
     fi
@@ -31401,11 +31422,11 @@ apply () {
     defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
     if [[ "$olsrd4runonboot" == "on" ]]; then
         if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
-            update-rc.d olsrd defaults >> /dev/null
+            update-rc.d olsrd defaults >>/dev/null
         fi
     else
         if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
-            update-rc.d -f olsrd remove >> /dev/null
+            update-rc.d -f olsrd remove >>/dev/null
         fi
     fi
     # set checked interfaces, else set default interface
@@ -31831,7 +31852,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
         elif [ $((onlinecheck)) != 0 ]; then
             echo "currently offline" >>$log 2>>$log
         else
-            curl -sL -o /tmp/ER-wizard-OLSRd_V1_latest.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$gitowner/$gitrepo/tarball >>$log 2>>$log
+            curl -s -o  /tmp/ER-wizard-OLSRd_V1_latest.tar.gz --connect-timeout 2 --speed-time 2 https://codeload.github.com/$gitowner/$gitrepo/legacy.tar.gz/$gitbranch >>$log 2>>$log
             tar   -xvzf /tmp/ER-wizard-OLSRd_V1_latest.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard-OLSRd_V1_latest.tar.gz >>$log 2>>$log
             while read LINE; do
@@ -31868,62 +31889,62 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
                 chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
                 chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
             fi
-            #extract offline --> replaces download-procedure, Version 20180628, https://github.com/pocki80/ER-wizard-AutoUpdate
-            echo "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
-AHIAAA==
+            #extract offline --> replaces download-procedure, Version 20181001, https://github.com/pocki80/ER-wizard-AutoUpdate
+            echo "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
+zfvr/rq//s3XH7wmIhIAcgAA
 " | base64 -d >/tmp/ER-wizard.tar.gz 2>>$log
             tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
