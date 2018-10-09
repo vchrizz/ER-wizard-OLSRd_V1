@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201809170]
+# Version [0903k/201810090]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -375,7 +375,7 @@ fi
 ##     patch for installing this wizard onto a existing 0.9.0.3 wizard     ##
 ## remove this block upon including a never version of olsrd after 0.9.0.3 ##
 #add logging to /etc/init.d/olsrd
-if [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
+if [ -f $olsrd4init ] && [ $(grep -c "/tmp/olsrd.log" $olsrd4init) -eq 0 ]; then
     echo "Add logging to /etc/init.d/olsrd" >>$log
     linenumber=$(($(grep -n "PID_FILE=/var/run" $olsrd4init | cut -d":" -f1)+1))
     sed     -i $linenumber'i\
@@ -393,20 +393,23 @@ UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
     [ -w /tmp/olsrd.watchdog ] && rm -f /tmp/olsrd.watchdog 2>/dev/null' $olsrd4init
 fi
 #add cronjob handling to /etc/init.d/olsrd
-if [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init) -eq 0 ]; then
+if [ -f $olsrd4init ] && [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init) -eq 0 ]; then
     linenumber=$(($(grep -n 'start-stop-daemon --stop  --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+0))
     sed     -i $linenumber'i\
     [ -f /etc/cron.d/olsrdwatchdog ] && rm /etc/cron.d/olsrdwatchdog 2>/dev/null' $olsrd4init
     linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
     sed     -i $linenumber'i\
     if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
-       [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&\
-       [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&\
+       [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \\> 0 ] &&\
+       [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \\> 0 ] &&\
        [ -x /etc/olsrdwatchdog ] ; then\
       echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
       chmod 744 /etc/cron.d/olsrdwatchdog\
     fi' $olsrd4init
 fi
+#fix init.d/olsrd generating a "0" file
+[ -f $olsrd4init ] && (grep -q ' > 0 ]' $olsrd4init) && sed -i 's/> 0 ]/\\> 0 ]/g' $olsrd4init
+
 ## END patch for installing this wizard onto a existing 0.9.0.3 wizard END ##
 #############################################################################
 
@@ -433,7 +436,7 @@ if [ -f $olsrd4config ]; then
     [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd4config
     [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd4config
     #restart olsrd
-    /etc/init.d/olsrd restart
+    /etc/init.d/olsrd restart >>$log 2>>$log
 fi
 if [ -f $olsrd6config ]; then 
     [ "$Pollrate" ] && sed -i "s/Pollrate.*/Pollrate $Pollrate/" $olsrd6config
@@ -446,7 +449,7 @@ if [ -f $olsrd6config ]; then
     [ "$HnaInterval" ] && sed -i "s/HnaInterval.*/HnaInterval $HnaInterval/" $olsrd6config
     [ "$HnaValidityTime" ] && sed -i "s/HnaValidityTime.*/HnaValidityTime $HnaValidityTime/" $olsrd6config
     #restart olsrd
-    /etc/init.d/olsrd6 restart
+    /etc/init.d/olsrd6 restart >>$log 2>>$log
 fi
 ###done update default intervals to reduce olsr management traffic
 
@@ -19566,13 +19569,15 @@ UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
         linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
         sed     -i $linenumber'i\
         if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
-           [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&\
-           [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&\
+           [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \\> 0 ] &&\
+           [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \\> 0 ] &&\
            [ -x /etc/olsrdwatchdog ] ; then\
           echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
           chmod 744 /etc/cron.d/olsrdwatchdog\
         fi' $olsrd4init
     fi
+    #fix init.d/olsrd generating a "0" file
+    (grep -q ' > 0 ]' $olsrd4init) && sed -i 's/> 0 ]/\\> 0 ]/g' $olsrd4init
 }
 # function to copy olsrd(ipv4) instance for second(ipv6) instance and reset config to defaults
 # because olsrd runs only in ipv4 *OR* ipv6 mode
@@ -19892,7 +19897,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     else
         CURRENTVERSION=$(head -n 8 $olsrdwizard | grep -i versioninfo= | awk -F"=" {'print $2'})
         if [ $((onlinecheck)) = 0 ]; then
-            GITVERSION=$(curl -sL --connect-timeout 2 --speed-time 2 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
+            GITVERSION=$(curl -s --connect-timeout 2 --speed-time 2 https://raw.githubusercontent.com/$gitowner/$gitrepo/$gitbranch/wizard.html | head -n 8 | grep -i versioninfo= | awk -F"=" {'print $2'})
             if [ "$GITVERSION" ] && [ "$CURRENTVERSION" ]; then 
                 if [ $(($GITVERSION)) \> $(($CURRENTVERSION)) ]; then 
                     updatetext="new version available: "$GITVERSION", current: "$CURRENTVERSION >>$log 2>>$log
@@ -20310,7 +20315,7 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
         elif [ $((onlinecheck)) != 0 ]; then
             echo "currently offline" >>$log 2>>$log
         else
-            curl -sL -o /tmp/ER-wizard-OLSRd_V1_latest.tar.gz --connect-timeout 2 --speed-time 2 https://api.github.com/repos/$gitowner/$gitrepo/tarball >>$log 2>>$log
+            curl -s -o /tmp/ER-wizard-OLSRd_V1_latest.tar.gz --connect-timeout 2 --speed-time 2 https://codeload.github.com/$gitowner/$gitrepo/legacy.tar.gz/$gitbranch >>$log 2>>$log
             tar   -xvzf /tmp/ER-wizard-OLSRd_V1_latest.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard-OLSRd_V1_latest.tar.gz >>$log 2>>$log
             while read LINE; do
@@ -20347,59 +20352,62 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
                 chmod --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
                 chown --reference=$(dirname $olsrdwizard) $(dirname $wiz) >>$log 2>>$log
             fi
-            #extract offline --> replaces download-procedure, Version 20171122, https://github.com/pocki80/ER-wizard-AutoUpdate
-            echo "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
+            #extract offline --> replaces download-procedure, Version 20181001, https://github.com/pocki80/ER-wizard-AutoUpdate
+            echo "H4sICDX2sVsCAEVSLXdpemFyZC1BdXRvVXBkYXRlLnRhcgDtHP1320SMn/1XaNeMNFDHSdi6
+kTblDdbBYLR7XWHwKPCc+JKYOnawnbRh9H9Huo+cXSdxUkr5qmGNfR+STtLpJN3ZUzfwPTeN4vovSRS+95dcjWaj8eTJk/ca8jK/86v1XvOjj5qPdh818S+139199B403ruDa5KkbvweUvP/
+vN5dvXd//Y+vC/83N/bseJKf+3c4/x83mx89ofn/+NFHTz5qtFqi/ePW/fy/i2vrgdP1Q6frJkNry9qCQ2/Av372HbwVegHs8MRWKvJskkbfjHGt4Ax6McdfDxqPnFaj+QS6M/js9TH0oxhe
+TMLzF3zC47qbIrxveZz4UQjY7CmKtYlFP9k2jGM+9aNJAoEfcvATmCQIrh9HI+iOzu0L3kWxpJPEHru9c3fAwU1gqkD5Hg9Tv+/33BQfd8CLwhRiPoqmHJjGxxDRm2EUp0jTqA2LhiHG+7mf
+Didd7D6OEh+XwVkbhmk6TtqOMxBV9V40csZR79x/2nCWgnkbxecJIF43CAQPT6JJymNwQ088vo58JPI5DrrHE9hOZknKR/MRNesf1xsf1hCS9eyz05fHR51K03p59Pqb006lZVm9/mCSxJ4f
+d5jTi8K+P3CQXbGN2F2HWUE0wIqpGzt45zQu+30XiZsI4pDaOpYyy9ryeJ94LcshiSZxjwuS5Tgt/IkuQo5I1GgZFRFjOou1gKq7sRv2hh02chMcLrMEM54fw9HxKRw+f3kKnx6+On4LXxye
+HMIDGh/vDSNgWssWwdWqR/OSdKyyLUo/fPi9/XBkP/Sch1+0H37dfvim/vCoBja84QkxscMqFTg4qOBokQrUZ777qMsHfghI0QOhI9zzU4hirSvpEPUOpTtCdXqAfWIuUEIUILNb4PeBh243
+4N4O9INJMgR/PN1FzY3SCFCVrS1s8QPYfdBCSXqxP04TB1UptWVZ3XMEUAmzjkB+3EPEPESiYOvcDwLCg9Y39MMBlY0TcCeX8DsMkPMwl7fsr37ADmBhRZ0Kme5sT8UvProX51B9N45JByut
+vasqll268SABQUHrwPH41AknQUAkJAHHXi26jUc0PqVbvXOFhmp8hL8LseSMYYrp36RbnIM0ehwbKArrdSq/wbCsrb5vYd/ekPfOIeoDEuQGINtPYu7B86M3FokENUaO/xDYT4BX6I64jRMG
+pxuwOQoloG4UpRmOsTbx76KHxNSg0wHWYHORESypv0cRvHw9fWQjSlCA53TswAUx1R2Pgxk0kxQ+j6JBwEXbp3XxH1OKKiFe8h7ait7I67CEpyBtQ45o3U20Fw2daJw605mbogVI0ICrextN
+hY0N7IsY8fNY9kj7fsA7le3ROQIe16xtq4JtQMwOK+ZppyELKoYU+P13oJqm4ijeEzcaOV5QJzGB/NS07/ulXRJ3ynMdRCkPPYtf+qnoadXgoCLoRu18v0l9RfPKJ+IWjet4gk/buAaAbFfD
+CqWwqiQjr8o72eNqznlSJup8ULSoxnrSfG3JDrC/Xz08ev7ms5OXr09fHr05ffbqVdXKrZ54AZkxW9kxadmSB1ppaXkUauH30KxoS5y0wUO7G0SuB9u79dZjd1QTy4YfouXAGYnNyMIvMfB1
+GswQDQ7qC8lY39Ys00YSAts1eGclE6QFbWWT7YGx+JUWPWprX/mInoxxrzzCZwTSYUzZ79c8pnWV5vVkPIhdj9PgtOWuCCQ41QW3Jf0W1fs4KJyduA5582koiXP63E1x9jhgI/Wad/VhOgpq
+e8ggC4C0iub2kLuIwseGaHDmhlLiZDX4MatuRHTFF7fdmLvneIeCx8WASyV9ABVsojVUKQsAj+Mobstx5GiBMEpxpJPQe5AZ2x5YPEi4RfbOnUa+J7yAWHoAaSRXMhw6IYGEhoeTegYJRxZ4
+ljaYlR9gGyonz46eH38ND2lsOJgEqz/75uTk8Oj028OTN+QaSA7Q8J9K6rXx8rU/4Yf9qKPMvv2CdRi8q2rjX72iifL5Sw3u+bPTZzSPJnEAdgI2rVsh76V26o84jgBaWJaMOfdECT6CHUPD
+ftxszR2l2L2oSyeCJhECSHmYCr+polUM76R24Y1WLCfDWKR2PiozIDTg2SH9blS6w9QwDFeE8FAR8mNjN2HPs29Oj/OAV8LNkAWr4OopjfNI6XMOLC408P77ojAvcjZXUKHJao3bznSt1eDs
+gMpUT1NuYKpBGUwF9J2OarYYL8znR8gvNDOvgfAT7TSR4hNjbMmZ7HxR0JTORTD3PtZRP6a1rt+v92ZdHtMChLEGmm0ETRaS/Lr6eDj+5KJDuMn7eNhqaAWk2zyTsCQVxWYg78edirakDIx7
+lHOVgC4j0yYTJTzYSD6bs5jmaowTrF3Ukxryn0zUEhn8LSI4R9tWxn5/EEYx31wEKxne6WzEcMVVzfQic0WUOraRmwVerhL7/q1TQbrBY+zuhotVxAR1f4vEXbLkZSKPkPIbCrzv04+2n2r+
+GS89z9DnyrciV4VhKOnHBF8snDVmXJQih8BGHqWjsYn567iM1we/rcMvza5e5HHCrpbHZWtiwAdub6bgOzKWNnRB6zqJ2BAA7Mvpb/1lNH4mKuBAVMc8mQRpPb1M87CMxyyuxbCKXS6G5JfH
+tF6/enl0KP0zdVEEU6FSWWKWK4rIifWyVsZWJvmI4sOIoKSh8BRKWub3M8wK9rbT3APy0vCutad0iC4ZwjMxdCYA6cWx8lZAbDJZ0BvnW11XJocVKFI4yN+EfbgmCsP/pRX2iZSv0Rlb68wH
+oNV1OIo8ePL4cZGgDH+LQtQTRAUrROMOhNEFJOjzepOAJowf+qnvBkAqbOZKAYj4e8ZOY38w4DF1pA4iImCaXnZGvZlW6QOpmMZzkqEnRVyWUZu5Wy8EcfzqzQlj3s/fNqUOLK1v5Y0BXVsX
+rp/CU+VzU9pLJiRsHb50OZLLYRCJXIWyy2aINzObZxvZTTQV7iyIcrYTjSIzVvFsmV1kJQw1QylqSUZJCPkmUjL8kSHM03XooElo5AISvXRbejHqG2V10ggUc2lx67khykd7WtzDPumQGC44
+lvwNovqXSQmt3V1ziOzJbXNID4X+4P9XljV95I8JaqeqUmRVLPLCRJZdXGBcKpJvtPBi1a5u3cKdiPajp7sN+af9FC+qX9p1C/qTUGpjGql0jt+fK+nUT2fkmQ38KacWJqWj9i8SKwppq0P0
+lJkYwGuM1qbD6C/YPWiC/Rb/sL153a6s3C3WVkSnimYAHEDOSdLZkk9UCi5nD3X3Xey/u6R/KYw8HM26IqANgKkk3yQOoaEqjMlY1rJpKoymFzrlWPaPI1Xcmr7FPlLbRR5JKo+eyp+dHB99
+efxpcbPEqz8c1XHLJLtZkl2/7yQSIP9hLbdeDyeTT2Ww0hJsQRrPaKbJOsq46aVELA9g+ulo2DKpk8xkpEgRGtrns/uwMiGMf3K+Bfk4E5nVlHnIzownrByGzhJ1TI6oiTki40oL52bCsm4y
+JX4vkoCT9wNEbiHD27h88cL+9Ouv7Lfz/dNXPE0Ow148G6eg9vUyu26iw9s3rw5BBh1LcZOzRL7VtLUcu/G/FmAylWujaq6BqgnT3jD2f/ttEapmGSrGeDcl3UiWozJwdVszukJVOcJozMPp
+OGylhLIEoZDOMXb49vVR6/SNxru8RTl6g60cvdmS1ZgXVmaRisy6MWRqVqukRjCDqN+niUebsGEE+TmRt05936RIxS7PUmMw365jlGNrmul5zTn9qMS5uFP3qI+mMRneildUiMPqm4VaJoBc
+1e5O1gsVevK1U0FuKkLWD1sjP0TbvXwERrfyMIyqKiW5o6EaBSgfqBFwfcEciUcr5KadBrmx2rCu72BaRvhl+6BqG7Qlf9Xm6eqTDwZAL47CW9lMze2lEtRfou4OxNzmCVlgH3F4ro+WRg5b
+ndAoHRyZQgtgTQfAtH4A9itweNpzxAgF6kxrRXTOJAUhalYpReVAKQIql+pGAipKWe2SbuwWbckDYpQNpO2XBMROPgIb+UmCBTvg8T5OizS7PQEGoFpljOpX1bJjmpCjVYWDUrL0UAwo7LVZ
+t4R7tM1XdX6qOF4V1u17Z1YTI4UxWRKz+b/MlpDS3E8hDVRyQx0H0+klEeN36bSTZeSePU/m7MyfeegJjag01jtjZrpZ2YxCT2W1KE89iybQC3wUTzo/emBRJkHGfWYteEVl4zjq4YoZy8MW
+Ru102kEGAZ0qyz2zNovOWdUSLWUolGJV53pgJBtsyUvRoneclA65A5f4prabZHugH5lelX3kfjfAjY+AmL32qYCbjZNKDoZUF7ms1Voxqr9Oc8U3Veb4iAnYjbuLlz5MkgFQSEFL1Uv5Zdph
+6oCJWeCWnzLJW+RCnmDF6ZAcOZsfg8jv3xg1EeHyIu6ZrbyNDpTc2XmSzYcOcONjGvnrxkcCzLVIjbKHBNwpGjkKQtt5andg6XmBRbpVyGWV0bDpvnkJUppaJTTk8Wu8JFOaOIYRdbJK7XWZ
+weoF0soTi5uTc/ziBW0Nbk6IIYJ+DFpt4neYeDYmvloxdFVZVdlmHnobW/Vch4S7cW9IttxsyDjJZDyOKAGp/XTZ5c9Z/byVp1p9GKvizyevY6bu48zUJTiKM4zNC7EZj0M3yJf1I2KRKaOx
+ItVRACqHJp1nmVasVml1Z2zj1adaLV9/DH0Fd5cVjNLafpbMoSgTiLcay3qpSpNe0bvhBcoLLK8ylXIlTyNkO9VrUwlyz8UXD3LVS15CYOybBYwpvpKQmbarRUVpw2qV0oZri4fWV0pU/i+E
+oxKtpcIx6dfbF01rU9G0/heiKZs3xST8rYlmvuVQrS7cdCgXWH53497QZQVG3GVM7NDcQGLlS5Let1hbSrrDvZRYdveHMcOWWxfStU2etWU132q6l1ZWWnN2MiYZWia05Y4/haZ+OOEZB700
+LicpV/z7cPz/Eo6zW4my/8IAuhip3kogrALdlbAM+yn6KmLQ0WSnom6q76qVuaWoMooJRaT7ju6uqmyHafski/UTVelMhazJS1nUI92q0oxDVAx8VW7oxfKrnapJAuaIfafuHmLfq1wV2zlj
+6v6MtX/Qw/qRmeh8UbCtg2rrT5rvYlh5W2bctKd3+KW1oJzEonJp16s6laGGPuCpOMQzdWNfnqVIIywb8pgyCOqNT5P/tkNg785YMun1eELMPGPNM2IvkY+P76CSy3lDZREpUMkmTUDLg+Xx
+wNWOKaFfBoiH0xYu5e8FtqsrZl2VZ/Xla8GW+Gsy+gXOVbZ/+RXsr8kWV+vXa6tQEd8GqM3VgYRc4DKJihid9xbMBoLsANQDFDdi/usEecG9hbN2SVb/lnI8t5vNL8/om6z+EvNmJvaaGX7D
+W53fNzTa8tXYTbL8xk0snlh7sGjRX3HgpoigaML/cW+/FOm9lbdfDLg1X4BZTEvZqzDLXoj5t7wWc0svx+RmzMKXZJawt/zNmWXvzywFWP5SzYqu5pzUisEZya2AtF5/mjjl+wB67V29gugW
+5asItdxgJdnSn90JI0Yw+KWfpIl1o0gzw6JSr4XQlTsta4SeZBzDyaiLAaRGGN4cow5h2vlTvQajOUxSMZirG50pMdfNz6UU17qbnPPRV/l5H4PyVg/0mMsc7LkLRpavoluu5wGOh/RrGR+w
++Ja8c6Poxe/VrMn4jVl3C9y/RQmUv1BhbJUWy13aK8R5xwaLUP73LNYdnahDrznDyvWO1hUX59U77iM3nLgBFKMwK9daHebVB/Xgl0mSQuwPhuLks9lm1w2xML/2m/LFK76pX77Olx21W8KS
+Ah82GZnqRZGlx7uTwQDNJ4wn8ThKuJyxvbEaUM4BJP9WdZbfoHJDDyoyfQAodJ5IZo+jGJ+HbjjglrHG1GPp/CM7V8g6NCjrIAM+fIaz+bemHOeMOWfVqzN2xYw1WgmrKdqaF756bsKRJvlN
+QAa+JIU8QylD/TR/2NujW5lkUE30Y7YNT9zeBp/iI9Ft/CE+EBP3vfvrn31lQshs8d19/xUrHz15bL7/+rhJ7VvNx/fff72La/+BbVvW7X71VX8MtfAhVPP4HTjwnf3mxeul30LN7g3pj8c2
+LPp2LC5ChW/BEoYEpHfShu/x+vrr58+/o+xrzLHmO/MRgTR2PXdmKwiWWcjyaETixlTqb7ctRJ1GlLqOLjLtE8uybPvA2vf8KfQCN0lopyVJ44nIDifsQBjk/eFHB4bF+w4+WvsO9sGfgA84
+ci1JZwGn7c3Ep55tt5tEATJxT6yV7cb4cm/sevSBm/ZjvNeAe5z2Pg7Wkux+Nz5YU7jUlBAUPuy770iMRL+kXA5e069pbBKR3Sj2SFDN8SXgaHwPAhrMIHZnexe+lw7bu4+eji/FWPbF1jrI
+Lh3W0ANM44P9dM4elIr4dITtIqSwPfI9L+DsQK1jL1GL2vtO6h1QT/zZ90NconVnyclmAzGiWDv5k5Ti5OH1snQ25h25YwSJ/xve7zYYeH4iv7vlHBAy+hPnqe1FQTJ2cY1ssYN9EvM+PWpy
+DG6TfZH4i+WaBpES7kaXDJG+H3aT8d6+I2BKNTJIpBZqosmJs8XZR3/cqdLLBNmPTopPTCXmUK/nx7xH+WTCr76ZXD2Ab+THU7Ry6covJl1QCWvAn1mNbEH1GXkh1SxxN2eSmWdFRlHdX8qs
+k0mYgKtekiHPVUBF3RaTRekJ2JqXidlYzb7tlIiHkSu0Npit5uZ+9yDXet/pHsC28JgpbCluNNCnfKiODB4Oyvco1pBVSQ1uRwgmctCsNyW3zfCMZTUvvVwLGZCFh5IAssaG61mrTO0y2riC
+E/hLnY05RksfeAmXY5c2VBkH86hHgaH0yI1nwC8Rusc9bbOUYZSCMJ9KJL0xIjT2k/pkFxA0odRB8Wfko3Sa+sG9NA9R9xecroasbKnfn1FDCXwJApu+ExyINT9vve00GosVx/QvwBhhFOab
++lybrProvXnJQ/OsVWeIJpyHDBwpnZUAFQjFz6LyRaHYfe3ofRC+XTPWWmMoJ5mwSHLlvbb9zd21ocFn6ty/Aau36yRk86iBN9YGrixzFvbAV3Dp9iYwDSyamwpYfulrlUIzReZxtQbSMSPX
+D3nMrsMjjxXcgL4ANRiC1JIdaQaxs92dpGkUQsi5R0cIZIrvATiObWdgyFZKT+QDu04C/rJ1vK9o7Pb8dNZu1Bt7mPdGLW67wXjobquKTqO2ZxiEw5H4JDXaujjavBxYFvlY+A9LxZsHWGQO
+FURBFCfzgwNe1JuM6DTWgKeHAafbT2cvve1q1lup1upz6XQAPVAuswRTNwYp3M66gERH2akuOFMXBCEA1g3wuAXbKyMrvy4vI83vw7bEghN2wuu48PWG287CA1ZOTXPjT6Duu0GicC8dYcw9
+Zpo4juq+rbhyJRI8y0g3B7gEvasxDWLOwxwuHuZRzQU43Q0jjycrRDhfBWqZmuTT2ak7OMKpvF39gOSq4cVYLbLLjT399s62UBQsAH9foasHPMSEKZZ8+KEejZabavKD/2OdTAUl04xtp71i
+00CyqLPodRcB1VyGrqaky3B8WcNGpmEpgXhTxGkaFrU0T8NSuKhrfwVYvUTcPmhp2G8frl6bSQOMjDqNUkzF6UnylH+vjGE0Czu8w/L5ZIhCmePt6JbbNYlQW9K9fOtk0h356crW+44yy/fZ
+zfvr/rq//s3XH7wmIhIAcgAA
 " | base64 -d >/tmp/ER-wizard.tar.gz 2>>$log
             tar   -xvzf /tmp/ER-wizard.tar.gz -C /tmp >/tmp/result.txt 2>>$log
             rm -f       /tmp/ER-wizard.tar.gz >>$log 2>>$log
@@ -20460,7 +20468,7 @@ JDrKTnXBmbogCAGwXoDHLthhGVl5v7yMNH8AuxILTtgpr6Pj6492nYUHrZya5safQD1wg0ThXjrCmHvM
           if [ "$pidfile" ]; then
             if [ $running -eq $pidfile ]; then
               echo "Compared PIDs from process ("$running") and pid-file ("$pidfile"): all is fine - restarting" >>$log
-              $olsrd4init restart >>$log
+              $olsrd4init restart >>$log 2>>$log
             else
               echo "PID from process ("$running") not matching pid-file ("$pidfile")!" >>$log
               echo "Killing process..." >>$log
@@ -20468,7 +20476,7 @@ JDrKTnXBmbogCAGwXoDHLthhGVl5v7yMNH8AuxILTtgpr6Pj6492nYUHrZya5safQD1wg0ThXjrCmHvM
               echo "Removing pidfile..." >>$log
               rm -f /var/run/olsrd.pid >>$log 2>>$log
               echo "Starting process..". >>$log
-              /etc/init.d/olsrd start
+              /etc/init.d/olsrd start >>$log 2>>$log
               echo "PID done..." >>$log
             fi
           else
@@ -20476,21 +20484,21 @@ JDrKTnXBmbogCAGwXoDHLthhGVl5v7yMNH8AuxILTtgpr6Pj6492nYUHrZya5safQD1wg0ThXjrCmHvM
             echo "Killing process..." >>$log
             kill $running
             echo "Starting process..." >>$log
-            /etc/init.d/olsrd start
+            /etc/init.d/olsrd start >>$log 2>>$log
             echo "PID done..." >>$log
           fi
         else
           echo "PID-Check: no process running." >>$log
           [ -f /var/run/olsrd.pid ] && echo Removing PID-file >>$log && rm /var/run/olsrd.pid >>$log 2>>$log
           echo "Starting process..." >>$log
-          $olsrd4init start >>$log
+          $olsrd4init start >>$log 2>>$log
           echo "PID done..." >>$log
         fi
         # restart daemon v4
     fi
     if [[ "$olsrdrestart6now" == "on" ]]; then
         # restart daemon v6
-        $olsrd6init restart >>$log
+        $olsrd6init restart >>$log 2>>$log
     fi
 
     # for debugging purposes
