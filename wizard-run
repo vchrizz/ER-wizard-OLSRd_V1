@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903k/201810090]
+# Version [0903k/201810150]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -158,7 +158,7 @@ else
     fi
 fi
 if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
-   [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
+   [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c 'START_OLSRD=\"YES\"') \> 0 ] &&
    [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
    [ -x /etc/olsrdwatchdog ] ; then
   echo add watchdog to crontab
@@ -166,7 +166,7 @@ if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
   chmod 744 /etc/cron.d/olsrdwatchdog
 fi
 if [ ! -f $olsrd4default ] || 
-   [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") -eq 0 ] ||
+   [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c 'START_OLSRD=\"YES\"') -eq 0 ] ||
    [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
    [ ! -x /etc/olsrdwatchdog ]; then
    if [ -f /etc/cron.d/olsrdwatchdog ]; then
@@ -400,7 +400,7 @@ if [ -f $olsrd4init ] && [ $(grep -c "rm /etc/cron.d/olsrdwatchdog" $olsrd4init)
     linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
     sed     -i $linenumber'i\
     if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
-       [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \\> 0 ] &&\
+       [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c ''START_OLSRD=\"YES\"'') \\> 0 ] &&\
        [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \\> 0 ] &&\
        [ -x /etc/olsrdwatchdog ] ; then\
       echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
@@ -410,8 +410,25 @@ fi
 #fix init.d/olsrd generating a "0" file
 [ -f $olsrd4init ] && (grep -q ' > 0 ]' $olsrd4init) && sed -i 's/> 0 ]/\\> 0 ]/g' $olsrd4init
 
+## olsrdwatchgdog patch BEGIN
+#patch syntax error in init file related to creation of watchdog cron.d entry
+if (grep -q ' START_OLSRD="YES")' /etc/init.d/olsrd); then
+  sed -i "s/ START_OLSRD=\"YES\")/ 'START_OLSRD=\"YES\"')/g" /etc/init.d/olsrd | grep "START_OLSRD="
+fi
+#add cron entry if missing but expected to be there
+if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
+   [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c 'START_OLSRD=\"YES\"') \> 0 ] &&
+   [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
+   [ -x /etc/olsrdwatchdog ] ; then
+  echo add watchdog to crontab >>$log
+  echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog
+  chmod 644 /etc/cron.d/olsrdwatchdog
+fi
+## olsrdwatchgdog patch END
+
 ## END patch for installing this wizard onto a existing 0.9.0.3 wizard END ##
 #############################################################################
+
 
 ###update default intervals to reduce olsr management traffic
 #define new settings
@@ -19569,7 +19586,7 @@ UG=$(echo $(id -un):$(id -u) "("$(id -gn):$(id -g)")")' $olsrd4init
         linenumber=$(($(grep -n 'start-stop-daemon --start --quiet' $olsrd4init | tail -n1 | cut -d":" -f1)+5))
         sed     -i $linenumber'i\
         if [ ! -f /etc/cron.d/olsrdwatchdog ] &&\
-           [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \\> 0 ] &&\
+           [ -f /etc/default/olsrd ] && [ $(cat /etc/default/olsrd | cut -d "#" -f 1 | grep -c ''START_OLSRD=\"YES\"'') \\> 0 ] &&\
            [ $(cat /config/user-data/olsrd4.conf | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \\> 0 ] &&\
            [ -x /etc/olsrdwatchdog ] ; then\
           echo "*   *  *   *   *   root  /etc/olsrdwatchdog >/dev/null 2>/dev/null" >/etc/cron.d/olsrdwatchdog\
@@ -20111,7 +20128,7 @@ Interface "br9" {\
     fi
     #add cronjob? if missing, olsrd-autostart=on, executeable watchdogscript 
     if [ ! -f /etc/cron.d/olsrdwatchdog ] &&
-       [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") \> 0 ] &&
+       [ -f $olsrd4default ] && [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c 'START_OLSRD=\"YES\"') \> 0 ] &&
        [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) \> 0 ] &&
        [ -x /etc/olsrdwatchdog ] ; then
       echo add watchdog to crontab >>$log
@@ -20120,7 +20137,7 @@ Interface "br9" {\
     fi
     #need to remove cronjob?
     if [ ! -f $olsrd4default ] || 
-       [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c START_OLSRD=\"YES\") -eq 0 ] ||
+       [ $(cat $olsrd4default | cut -d "#" -f 1 | grep -c 'START_OLSRD=\"YES\"') -eq 0 ] ||
        [ $(cat $olsrd4config | cut -d "#" -f 1 | grep -c LoadPlugin.*olsrd_watchdog) -eq 0 ] ||
        [ ! -x /etc/olsrdwatchdog ]; then
        if [ -f /etc/cron.d/olsrdwatchdog ]; then
