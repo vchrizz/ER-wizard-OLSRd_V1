@@ -19946,9 +19946,9 @@ apply () {
     olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
     if [[ ! -z $enabledv4interfaces ]]; then
         for int in $enabledv4interfaces; do
-            defaultLQ=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .lqdefault' $INPUT)
-            mode=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .meshmode' $INPUT)
-            autodetectchanges=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .autochanges' $INPUT)
+            defaultLQ=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .lqdefault' $INPUT | grep -v "null")
+            mode=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .meshmode' $INPUT | grep -v "null")
+            autodetectchanges=$(jq -M -r '.olsrd4config[] | select(.olsrd4interface=="'$int'") | .autochanges' $INPUT | grep -v "null")
             [ "$mode" ] && new1='    Mode "'$mode'"\n' || new1=""
             [ "$autodetectchanges" ] && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
             if [ "$defaultLQ" ]; then
