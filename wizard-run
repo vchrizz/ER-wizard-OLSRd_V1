@@ -200,7 +200,7 @@ else    #disabled, save to user-data
 fi
 
 #Remove future versions from user-data directory
-#rm -f /config/user-data/olsrd*0.9.6.2-1*.deb >/dev/null
+#rm -f /config/user-data/olsrd*0.9.0.3-1*.deb >/dev/null
 rm -f /config/user-data/olsrd*0.9.5-1*.deb >/dev/null
 
 # CPO remove old installer script!
@@ -224,7 +224,7 @@ echo "clean up old install-scripts and package files..." >>$log
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
-# base64: olsrd_0.9.6.2-1_mips.deb
+# base64: olsrd_0.9.0.3-1_mips.deb
 echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI5MSAgMCAgICAgMCAgICAgMTAwNjQ0
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3Njg4NyAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE1NTEyNzY4ODcgIDAgICAgIDAgICAgIDEw
@@ -4898,9 +4898,9 @@ Wh9+ZWkPxs4f7W/bAmjtIq+uvHtfp9Cv3SYvzqU90HDICaerMfV+0vG9ZWDJDrymqp9ci5OQOnMp
 1RPHOdG6WMswzoZ0V9eAp7hEaJdXC1etTO9i6pMI80fwqtaw34WawIgZiVq4biDYAZ8M8j/NkFrk
 Mp/FX+smXZjQi6Il4nzqx3/+bdXlNYOLi2SH60m7aF/snjxuC0mS/gBlal0WAwpho6D0xWM6uSzh
 GPS7Qdmd3dmd3dmd3dmd3dn/oP0/RKYctAAgDQA=
-" | base64 -d > $cfgusrdir/olsrd_0.9.6.2-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mips.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd." >>$log || echo "extraction of $arch olsrd failed" >>$log
-# base64: olsrd-plugins_0.9.6.2-1_mips.deb
+# base64: olsrd-plugins_0.9.0.3-1_mips.deb
 echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI5MiAgMCAgICAgMCAgICAgMTAwNjQ0
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIxOSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE0Nzc2NDMyMTkgIDAgICAgIDAgICAgIDEw
@@ -9706,12 +9706,12 @@ c8gPNB3A9d5OYN0Jk3r/HOFDGtB05E6J7+n1N8Z5Op2XzjtvUu/fAT//o/76T3cKdYn9aMZY3p+O
 SHLFI9xLjOk8N5qk+4X51a0YyGVXJBObVqSTuWyMPtGlwVj7QOzziWx8jbqFpy6Xvpo66uH3wAMP
 qHf4yXf1eeUn6utX3veJVaGV8H5VKFR/H1FWWQFTt0r9vnJNfgO5fDSrKCSbTuft0jnF/4L+TOif
 6o9Hr5LiV0n/lfc/cB/SH4G5lhT/iP4f/T76ffT76Ae//w3ycMCrAEgNAA==
-" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.6.2-1_mips.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd-plugins." >>$log || echo "extraction of $arch olsrd-plugins failed" >>$log
 fi
 
 if [ $arch == 'mipsel' ]; then
-# base64: olsrd_0.9.6.2-1_mipsel.deb
+# base64: olsrd_0.9.0.3-1_mipsel.deb
 echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI4MCAgMCAgICAgMCAgICAgMTAwNjQ0
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3NjM5NSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE1NTEyNzYzOTUgIDAgICAgIDAgICAgIDEw
@@ -14374,9 +14374,9 @@ ef22TrFfp01BgktnoOGAE15Pc+rtpNNbq6DSHQQtNX/5FmdhDeYyqkdOc2J1cVbhnA0Zbm6BgrhE
 6BeXC5etTK9j65MJC0bwqtZwXoeZwoobi1m6bSDaAx8N8gtmSi9yWczir3WTLkzoR9MScQr68599
 XXV9weDqKtXhdtwu1hf3RQG3hSTZYIAyrS6bAZWwUUjm/CGdfLZILMbtoOzWbu3Wbu3Wbu3Wbu0/
 aP8P7pYxtgAgDQAK
-" | base64 -d > $cfgusrdir/olsrd_0.9.6.2-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd." >>$log || echo "extraction of $arch olsrd failed" >>$log
-# base64: olsrd-plugins_0.9.6.2-1_mipsel.deb
+# base64: olsrd-plugins_0.9.0.3-1_mipsel.deb
 echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI4MSAgMCAgICAgMCAgICAgMTAwNjQ0
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIyMSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE0Nzc2NDMyMjEgIDAgICAgIDAgICAgIDEw
@@ -19157,7 +19157,7 @@ SDeqqPcVIV0e0uUh3bhFujeEdLjO9L1N5QS5vbNmOl8a0qXfRpeqpemwzHeFdLiGyb9rDd9pRg9Y
 eIR7lZTuak95ul+0X/OykWxmWSI+sCyVyGai+IRbg9HukegT8UxsjX6Epzmb+jB1tMDv/vvv1+/w
 k+/68/J7WlqW33vPitByeL8iFGq5l2grVMA0r9C/r1yS30g215/RNJJJpXJ26Zzi//30f3I41v8h
 e/xD9v/y++6/l/U/A+ZS9vhH/f/R76PfR7+PfvD7v0dDy1sASA0ACg==
-" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.6.2-1_mipsel.deb
+" | base64 -d > $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd-plugins." >>$log || echo "extraction of $arch olsrd-plugins failed" >>$log
 fi
 echo "extracted packages olsrd and olsrd-plugins" >>$log
