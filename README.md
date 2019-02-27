@@ -1,10 +1,10 @@
 # ER-wizard-OLSRd_V1
 OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
 
-branch to prepare new release including 0.9.7
+branch to refurbish the UI and to solve install issues on EdgeOS v2.0.0
 
 what to work on:
-* [done] new olsrd packages
+* [done] repacked olsrd packages
 * [done] fix paths to plugins (dynamically?)
 * [done] write a config migration script to move from "old" config style to "new" without dead freight
 * [done] new etc-init.d scripts including logging and watchdog handling
