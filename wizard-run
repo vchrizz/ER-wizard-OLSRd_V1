@@ -225,8 +225,7 @@ echo "clean up old install-scripts and package files..." >>$log
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
 # base64: olsrd_0.9.0.3-1_mips.deb
-echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI5MSAgMCAgICAgMCAgICAgMTAwNjQ0
-ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3Njg4NyAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
+echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3Njg4NyAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE1NTEyNzY4ODcgIDAgICAgIDAgICAgIDEw
 MDY0NCAgMjMxNCAgICAgIGAKH4sIAAAAAAACA+1Z62/cxhHXZ/4VGzkIbMCkuNwn3SqtE8tIgLh2
 Lbf94ArGPmbvCPHIK8mTpSB/fIfkyXr6Gdhug/1Bdycdd2bnPbOrbG/nsyNHKCGmT8T1z+l3yvKc
@@ -4901,8 +4900,7 @@ GPS7Qdmd3dmd3dmd3dmd3dn/oP0/RKYctAAgDQA=
 " | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mips.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd." >>$log || echo "extraction of $arch olsrd failed" >>$log
 # base64: olsrd-plugins_0.9.0.3-1_mips.deb
-echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI5MiAgMCAgICAgMCAgICAgMTAwNjQ0
-ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIxOSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
+echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIxOSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE0Nzc2NDMyMTkgIDAgICAgIDAgICAgIDEw
 MDY0NCAgMjE1NCAgICAgIGAKH4sIAAAAAAACA+1YW1PbShLmWb9iHpOtg5n7jKg9p9YbSKAqXBbI
 ye4TNZceWxtb0pHkEPLrtyWZQHIg8T4kqVPlLkA20vR83f11T7cmezvfXSiKUWq4onx5HT4zQanU
@@ -9712,8 +9710,7 @@ fi
 
 if [ $arch == 'mipsel' ]; then
 # base64: olsrd_0.9.0.3-1_mipsel.deb
-echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI4MCAgMCAgICAgMCAgICAgMTAwNjQ0
-ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3NjM5NSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
+echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3NjM5NSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE1NTEyNzYzOTUgIDAgICAgIDAgICAgIDEw
 MDY0NCAgMjMyNyAgICAgIGAKH4sIAAAAAAACA+1ZbW/cuBH2Z/0KnnM4JEAki6T4orS+NtckuAMu
 TRqn7YfUCPgy3BWslbaS1rEP9+M7ktbxa14PTtorH3h37RVnODMcPjOks72dW0eOUEJMn4irn9Pv
@@ -14377,8 +14374,7 @@ aP8P7pYxtgAgDQAK
 " | base64 -d > $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb
 [[ $? == 0 ]] && echo "extracted $arch olsrd." >>$log || echo "extraction of $arch olsrd failed" >>$log
 # base64: olsrd-plugins_0.9.0.3-1_mipsel.deb
-echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTUzMTE1NDI4MSAgMCAgICAgMCAgICAgMTAwNjQ0
-ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIyMSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
+echo "ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTQ3NzY0MzIyMSAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
 ICAgICAgICAgYAoyLjAKY29udHJvbC50YXIuZ3ogIDE0Nzc2NDMyMjEgIDAgICAgIDAgICAgIDEw
 MDY0NCAgMjE1NCAgICAgIGAKH4sIAAAAAAACA+1YW3PUyhHmWb9iHiF1vJ77jFw5p7LBBrsKX2Kb
 Q/LkmkvPWkErKZIWY359WtIaG2LD5gFOnartAnYXTfd83f11z7Rmu89+uFAUo9T4ifL15/idCUql
