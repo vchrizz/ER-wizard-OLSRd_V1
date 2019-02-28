@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+ and 2.0+)
-versioninfo=201902283
+versioninfo=201902284
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201801260
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -201,9 +201,9 @@ div.olsrlogo {
     <legend>OLSRd IPv4 Advanded Options</legend>
     <!-- MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority  -->
   <table border="0">
-    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d4mainip" name="d4mainip" type="text" size="80" title="main-ipv4" /></td></tr>
-    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d4rtprotostd" name="d4rtprotostd" type="text" size="80" title="proto tag, i.e. olsr1" /></td></tr>
-    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="80" title="table nr, i.e. 100" /></td></tr>
+    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d4mainip" name="d4mainip" type="text" size="20" title="main-ipv4" /></td></tr>
+    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d4rtprotostd" name="d4rtprotostd" type="text" size="6" title="proto tag, i.e. olsr1" /></td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="6" title="table nr, i.e. 100" /></td></tr>
     </table>
 </fieldset>
 
@@ -277,6 +277,17 @@ div.olsrlogo {
         <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (tcp:8081)</span></div>
     </div>
 </fieldset>
+
+<fieldset id="olsrd6adv" name="olsrd6advanced" class="primary closed">
+    <legend>OLSRd IPv6 Advanded Options</legend>
+    <!-- MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority  -->
+  <table border="0">
+    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d6mainip" name="d6mainip" type="text" size="40" title="main-ipv6" /></td></tr>
+    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d6rtprotostd" name="d6rtprotostd" type="text" size="6" title="proto tag, i.e. olsr6" /></td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d6rttablestd" name="d6rttablestd" type="text" size="6" title="table nr, i.e. 100" /></td></tr>
+    </table>
+</fieldset>
+
 
 <fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary closed">
     <legend>Common OLSR Settings</legend>

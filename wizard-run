@@ -20422,6 +20422,18 @@ apply () {
         fi
     fi
 
+    #advanced settings
+    #MainIp
+    mainip=$(jq -M -r '.d6mainip' $INPUT 2>/dev/null)
+    advanced_setting $olsrd6conf MainIp "$mainip"
+    #RtProto
+    rtproto=$(jq -M -r '.d6rtprotostd' $INPUT 2>/dev/null)
+    advanced_setting $olsrd6conf RtProto "$rtproto"
+    #RtTable
+    rttable=$(jq -M -r '.d6rttablestd' $INPUT 2>/dev/null)
+    advanced_setting $olsrd6conf RtTable "$rttable"
+
+
     ###############################
     #  IPv6 OLSRd APPLY end       #
     ###############################
