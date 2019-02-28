@@ -160,6 +160,16 @@ ENDSCRIPTCONTENT
 }
 
 
+#here checksum_start
+#checksum_start
+chksum_mips='1c39b824dc00913402de732c82b8119a'
+chksum_mipsplg='ccc8a6346c13508768945adfaf254f8f'
+chksum_mipsel='b65b7b6c31b3fa6b738e330f1e1100b9'
+chksum_mipselplg='edc500a39d5251855b396e413e14e330'
+#checksum_end
+#under checksum_end
+
+
 #base64begin: olsrd packages for offline use
 # !dont edit or remove this comment!
 # other files than wizard-run/wizard.html/validator.json are ignored when uploading wizards to the router.
@@ -224,15 +234,6 @@ echo "clean up old install-scripts and package files..." >>$log
 [ -f "/etc/olsrdwatchdog" ] && rm /etc/olsrdwatchdog >>$log
 
 [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ] && arch='mips' || arch='mipsel'
-
-#here checksum_start
-#checksum_start
-chksum_mips='1c39b824dc00913402de732c82b8119a'
-chksum_mipsplg='ccc8a6346c13508768945adfaf254f8f'
-chksum_mipsel='b65b7b6c31b3fa6b738e330f1e1100b9'
-chksum_mipselplg='edc500a39d5251855b396e413e14e330'
-#checksum_end
-#under checksum_end
 
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
