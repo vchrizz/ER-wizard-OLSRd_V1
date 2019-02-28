@@ -20272,7 +20272,7 @@ apply () {
     for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n "/hna6/I,/^}/ p" | grep -E ":" | sed -e 's/ /-/g'); do
         ip=$(echo $line | cut -d "-" -f 1)
         mask=$(echo $line | cut -d "-" -f 2)
-        jqmask=$(jq -M -r '.hna6list[] | select(.hna6address=="'$ip'") | .hna6mask' $INPUT)
+        jqmask=$(jq -M -r '.hna6list[] | select(.hna6address=="'$ip'") | .hna6mask' $INPUT 2>/dev/null)
         if [ "$jqmask" ] && [ $jqmask -eq $mask ]; then
             echo "hna $ip/$mask can stay" >>$log
         else
@@ -20282,7 +20282,7 @@ apply () {
             sed -i "/hna6/I,/^}/ {s/[# \t]*"$ipsearch"[ \t]\+"$subsearch".*$//; /^$/d}" $olsrd6conf
         fi
     done
-    for line in $(jq -M -r '.hna6list[] | .hna6address+"-"+.hna6mask' $INPUT); do
+    for line in $(jq -M -r '.hna6list[] | .hna6address+"-"+.hna6mask' $INPUT 2>/dev/null); do
         ip=$(echo $line | cut -d "-" -f 1)
         mask=$(echo $line | cut -d "-" -f 2)
         subsearch=$(echo $mask | sed -e 's/\./\\./g')
@@ -20296,7 +20296,7 @@ apply () {
     # lqmult remove all entries in config
     for line in $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -i linkqualitymult | grep -vi default | awk '{print $2"-"$3}'); do
         ip=$(echo $line | cut -d "-" -f 1)
-        jqlq=$(jq -M -r '.lq6list[] | select(.lq6address=="'$ip'") | .lq6value' $INPUT)
+        jqlq=$(jq -M -r '.lq6list[] | select(.lq6address=="'$ip'") | .lq6value' $INPUT 2>/dev/null)
         [ "$jqlq" ] || jqlq=1.00
         (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
         (expr $jqlq '<=' 0 >/dev/null) && jqlq=0.01
@@ -20309,7 +20309,7 @@ apply () {
             sed -i "/[# \t]*linkqualitymult[ \t]\+"$ipsearch"[ \t]\+.*$/Id" $olsrd6conf
         fi
     done
-    for line in $(jq -M -r '.lq6list[] | .lq6address+"-"+.lq6value' $INPUT); do
+    for line in $(jq -M -r '.lq6list[] | .lq6address+"-"+.lq6value' $INPUT 2>/dev/null); do
         jqlq=$(echo $line | cut -d "-" -f 2)
         [ "$jqlq" ] || jqlq=1.00
         (expr $jqlq '>=' 1 >/dev/null) && jqlq=1.00
