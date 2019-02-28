@@ -20236,10 +20236,14 @@ apply () {
     #MainIp
     mainip=$(jq -M -r '.d4mainip' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf MainIp "$mainip"
-    #RtProto
+    
+    #RtProto -> 0..254,
     rtproto=$(jq -M -r '.d4rtprotostd' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf RtProto "$rtproto"
-    #RtTable
+    
+    #RtTable -> 0..254, auto
+    #ip -4 route show table all | grep -oE " table [a-zA-Z0-9]+ " | sort -u | awk '{print $2}'
+    #sed -e 's/[ \t]*#.*$//' -e '/^[ \t]*$/d' -e 's/[ \t]?/,/ig' /etc/iproute2/rt_tables
     rttable=$(jq -M -r '.d4rttablestd' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf RtTable "$rttable"
     
