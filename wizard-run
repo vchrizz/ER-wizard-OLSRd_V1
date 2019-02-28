@@ -162,9 +162,9 @@ ENDSCRIPTCONTENT
 #here checksum_start
 #checksum_start
 chksum_mips='1c39b824dc00913402de732c82b8119a'
-chksum_mipsplg='ccc8a6346c13508768945adfaf254f8f'
+chksum_mips_plg='ccc8a6346c13508768945adfaf254f8f'
 chksum_mipsel='b65b7b6c31b3fa6b738e330f1e1100b9'
-chksum_mipselplg='edc500a39d5251855b396e413e14e330'
+chksum_mipsel_plg='edc500a39d5251855b396e413e14e330'
 #checksum_end
 #under checksum_end
 
@@ -9744,7 +9744,7 @@ if [ $arch == 'mipsel' ]; then
 
 #check for 0.9.0.3 against repacked version
 [ -f $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "chksum_mipsel" ] &&
+[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "$chksum_mipsel" ] &&
 forceinstall=1
 
 [ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb ] && 
