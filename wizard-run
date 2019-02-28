@@ -230,14 +230,12 @@ if [ $arch == 'mips' ]; then
 
 #check for 0.9.0.3 against repacked version
 [ -f $cfgusrdir/olsrd_0.9.0.3-1_mips.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "3898fc5f921dfc4cc622558e49a1d255" ] &&
+[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "be2bc6df3fc390797fbcc35f13e64a0a" ] &&
 forceinstall=1
 
 [ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "ae06b3994f1f220aacd3f72ae32dcd53" ] &&
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "ccc8a6346c13508768945adfaf254f8f" ] &&
 forceinstall=1
-#mipsel    : d568f9210e50b28d8c377b79a4a75a81
-#mipsel-plg: e6ff2962df18adda385530c7b2779064
 #end-check for 0.9.0.3 against repacked version
 
 # base64: olsrd_0.9.0.3-1_mips.deb
@@ -9730,11 +9728,11 @@ if [ $arch == 'mipsel' ]; then
 
 #check for 0.9.0.3 against repacked version
 [ -f $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "d568f9210e50b28d8c377b79a4a75a81" ] &&
+[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "e7a6eb9cfe7ff7ae238443c79b71f075" ] &&
 forceinstall=1
 
 [ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "e6ff2962df18adda385530c7b2779064" ] &&
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "edc500a39d5251855b396e413e14e330" ] &&
 forceinstall=1
 #end-check for 0.9.0.3 against repacked version
 
