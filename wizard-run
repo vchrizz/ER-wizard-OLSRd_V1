@@ -54,10 +54,10 @@ if [ -d /config/olsrd ] && [ -f /config/olsrd/olsrd4.conf ]; then
     cp /config/olsrd/olsrd4default /etc/default/olsrd
     cp /config/olsrd/olsrd6default /etc/default/olsrd6
     # move files
-    mv /config/olsrd/olsrd4.conf /config/user-data
-    mv /config/olsrd/olsrd6.conf /config/user-data
-    mv /config/olsrd/olsrd4default /config/user-data
-    mv /config/olsrd/olsrd6default /config/user-data
+    mv /config/olsrd/olsrd4.conf $olsrd4conf
+    mv /config/olsrd/olsrd6.conf $olsrd6conf
+    mv /config/olsrd/olsrd4default $olsrd4def
+    mv /config/olsrd/olsrd6default $olsrd6def
     #silently restart daemons
     /etc/init.d/olsrd  restart >/dev/null 2>/dev/null
     /etc/init.d/olsrd6 restart >/dev/null 2>/dev/null
@@ -74,11 +74,11 @@ writesetupscript () {
 log="/var/log/0xffolsrd.log"
 cfgusrdir="/config/user-data/"
 olsrd4conf="${cfgusrdir}olsrd4.conf"
-olsrd4def="${cfgusrdir}olsrd4default"
+olsrd4def="${cfgusrdir}olsrd4.default"
 olsrd4default='/etc/default/olsrd'
 olsrd4init='/etc/init.d/olsrd'
 olsrd6conf="${cfgusrdir}olsrd6.conf"
-olsrd6def="${cfgusrdir}olsrd6default"
+olsrd6def="${cfgusrdir}olsrd6.default"
 olsrd6default='/etc/default/olsrd6'
 olsrd6init='/etc/init.d/olsrd6'
 echo "Running olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
@@ -19387,7 +19387,7 @@ setupv4olsrd () {
         mv $conffile /config/user-data/olsrd4.bak
         conffile="/config/user-data/olsrd4.bak"
         cp /etc/olsrd/olsrd.conf $olsrd4conf
-        mv /config/user-data/olsrd4.default /config/user-data/olsrd4.default.bak
+        cp /config/user-data/olsrd4.default /config/user-data/olsrd4.default.bak
         # basics
         basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
         [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd4conf
@@ -19486,7 +19486,7 @@ setupv6olsrd () {
         mv $conffile /config/user-data/olsrd6.bak
         conffile="/config/user-data/olsrd6.bak"
         cp /etc/olsrd/olsrd6.conf $olsrd6conf
-        mv /config/user-data/olsrd6.default /config/user-data/olsrd6.default.bak
+        cp /config/user-data/olsrd6.default /config/user-data/olsrd6.default.bak
         # basics
         basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
         [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd6conf
