@@ -19634,8 +19634,14 @@ load () {
     # get current olsrd4 configuration and return configured values to wizard.html
     [[ -w $olsrd4default && $(grep START_OLSRD $olsrd4default) != \#* ]] && olsrd4enabled='"olsrd4enabled":"on",' || olsrd4enabled='"olsrd4enabled":"",'
 
-    defrunlvl=$(grep initdefault /etc/inittab 2>/dev/null | cut -d: -f2)
-    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd 2>/dev/null) ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
+    if [ -f /etc/inittab ]; then
+      defrunlvl=$(grep initdefault /etc/inittab 2>/dev/null | cut -d: -f2)
+      [[ $(ls /etc/rc$defrunlvl.d/S*olsrd 2>/dev/null) ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
+    else
+      /lib/systemd/systemd-sysv-install is-enabled olsrd 2>/dev/null
+      [[ $? -eq 0 ]] olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
+    fi
+    
 
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
@@ -19773,8 +19779,13 @@ load () {
     # get current olsrd6 configuration and return configured values to wizard.html
     [[ -w $olsrd6default && $(grep START_OLSRD $olsrd6default) != \#* ]] && olsrd6enabled='"olsrd6enabled":"on",' || olsrd6enabled='"olsrd6enabled":"",'
 
-    defrunlvl=$(grep initdefault /etc/inittab 2>/dev/null | cut -d: -f2)
-    [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd6runonboot":"",'
+    if [ -f /etc/inittab ]; then
+      defrunlvl=$(grep initdefault /etc/inittab 2>/dev/null | cut -d: -f2)
+      [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd6runonboot":"",'
+    else
+      /lib/systemd/systemd-sysv-install is-enabled olsrd6 2>/dev/null
+      [[ $? -eq 0 ]] olsrd4runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd4runonboot":"",'
+    fi
 
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
@@ -19970,16 +19981,24 @@ apply () {
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4def
     fi
     olsrd4runonboot=$(jq -M -r '.olsrd4runonboot' $INPUT 2>/dev/null)
-    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    if [[ "$olsrd4runonboot" == "on" ]]; then
-        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
-            update-rc.d olsrd defaults >>/dev/null
+    if [ -f /etc/inittab ]; then
+        defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+        if [[ "$olsrd4runonboot" == "on" ]]; then
+            if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
+                update-rc.d olsrd defaults >>/dev/null
+            fi
+        else
+            if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
+                update-rc.d -f olsrd remove >>/dev/null
+            fi
         fi
     else
-        if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd) ]]; then
-            update-rc.d -f olsrd remove >>/dev/null
-        fi
+        /lib/systemd/systemd-sysv-install is-enabled olsrd 2>/dev/null
+        [[ $? -eq 0 ]] && rob=1 || rob=0
+        [[ "$olsrd4runonboot" == "on" ]] && rob=0 && /lib/systemd/systemd-sysv-install enable olsrd
+        [[ ! "$olsrd4runonboot" ]] && rob=1 && /lib/systemd/systemd-sysv-install disable olsrd
     fi
+    
     # set checked interfaces, else set default interface
     enabledv4interfaces="$(jq -M -r '.olsrd4config[] | select(.enabled=="on") | .olsrd4interface' $INPUT 2>/dev/null)"
     olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
@@ -20194,16 +20213,24 @@ apply () {
         sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd6def
     fi
     olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT 2>/dev/null)
-    defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-    if [[ "$olsrd6runonboot" == "on" ]]; then
-        if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
-            update-rc.d olsrd6 defaults >> /dev/null
+    if [ -f /etc/inittab ]; then
+        defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
+        if [[ "$olsrd4runonboot" == "on" ]]; then
+            if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+                update-rc.d olsrd6 defaults >>/dev/null
+            fi
+        else
+            if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
+                update-rc.d -f olsrd6 remove >>/dev/null
+            fi
         fi
     else
-        if [[ -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
-            update-rc.d -f olsrd6 remove >> /dev/null
-        fi
+        /lib/systemd/systemd-sysv-install is-enabled olsrd6 2>/dev/null
+        [[ $? -eq 0 ]] && rob=1 || rob=0
+        [[ "$olsrd4runonboot" == "on" ]] && rob=0 && /lib/systemd/systemd-sysv-install enable olsrd6
+        [[ ! "$olsrd4runonboot" ]] && rob=1 && /lib/systemd/systemd-sysv-install disable olsrd6
     fi
+
     # set checked interfaces, else set default interface
     enabledv6interfaces="$(jq -M -r '.olsrd6config[] | select(.enabled=="on") | .olsrd6interface' $INPUT 2>/dev/null)"
     olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
