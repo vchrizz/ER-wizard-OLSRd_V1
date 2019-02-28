@@ -159,7 +159,6 @@ ENDSCRIPTCONTENT
     chmod 755 /config/scripts/post-config.d/olsr-after-ntp.sh
 }
 
-
 #here checksum_start
 #checksum_start
 chksum_mips='1c39b824dc00913402de732c82b8119a'
@@ -168,7 +167,6 @@ chksum_mipsel='b65b7b6c31b3fa6b738e330f1e1100b9'
 chksum_mipselplg='edc500a39d5251855b396e413e14e330'
 #checksum_end
 #under checksum_end
-
 
 #base64begin: olsrd packages for offline use
 # !dont edit or remove this comment!
@@ -19941,7 +19939,8 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
     ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6plugins$hna6list$lq6list\"olsrd6config\":[$olsrd6interfaces]"
     echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
-    echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
+    #echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
+    echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
     
     [ -x /config/scripts/post-config.d/olsr-after-ntp.sh ] || write_ntp_script
 }
