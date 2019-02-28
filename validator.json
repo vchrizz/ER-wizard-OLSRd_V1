@@ -1,98 +1,22 @@
-{"rules":
- {
-  "hna4address":{
-    "required":"true"
-   ,"ipv4":1
-  }
- ,"hna6address":{
-    "required":"true"
-   ,"ipv6":1
-  }
- ,"lq4address":{
-    "required":"true"
-   ,"ipv4":1
-  }
- ,"lq6address":{
-    "required":"true"
-   ,"ipv6":1
-  }
- ,"d4mainip":{ "ipv4":1 }
- ,"d4rtprotostd":{ "number":1 }
- ,"d4rttablestd":{ "number":1 }
- ,"d4rttabletun":{ "number":1 }
- ,"d4rttabledef":{ "number":1 }
- ,"d4priotable":{ "number":1 }
- ,"d4prioolsr":{ "number":1 }
- ,"d4priotun":{ "number":1 }
- ,"d4priodef":{ "number":1 }
- ,"d6mainip":{ "ipv6":1 }
- ,"d6rtprotostd":{ "number":1 }
- ,"d6rttablestd":{ "number":1 }
- ,"d6rttabletun":{ "number":1 }
- ,"d6rttabledef":{ "number":1 }
- ,"d6priotable":{ "number":1 }
- ,"d6prioolsr":{ "number":1 }
- ,"d6priotun":{ "number":1 }
- ,"d6priodef":{ "number":1 }
- ,"hna4mask":{
-    "required":"true"
-   ,"number":1
-  }
- ,"hna6mask":{
-    "required":"true"
-   ,"number":1
-  }
- ,"lq4value":{
-    "required":"true"
-   ,"number":1
-  }
- ,"lq6value":{
-    "required":"true"
-   ,"number":1
-  }
- ,"lqdefault":{
-    "required":"false"
-   ,"number":1
-  }
- ,"txtplg4port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"jsonplg4port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"httpplg4port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"txtplg6port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"jsonplg6port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"httpplg6port":{
-    "required":"false"
-   ,"number":1
-  }
- ,"httpplg4ip":{
-    "required":"true"
-   ,"ipv4":1
-  }
- ,"httpplg4mask":{
-    "required":"false"
-   ,"number":1
-  }
- ,"httpplg6ip":{
-    "required":"true"
-   ,"ipv6":1
-  }
- ,"httpplg6mask":{
-    "required":"false"
-   ,"number":1
-  }
- }
+{
+	"rules": {
+		"olsrd4interface": {
+			"required": true,
+			"interfaceName": 1
+		},
+		"olsrd6interface": {
+			"required": true,
+			"interfaceName": 1
+		},
+		"text": {
+			"required": true,
+			"ipv4": 1
+		},
+		"checks": {
+			"required": false
+		},
+		"nchecks": {
+			"required": false
+		}
+	}
 }
