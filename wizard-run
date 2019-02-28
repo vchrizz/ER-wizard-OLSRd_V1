@@ -222,8 +222,24 @@ echo "clean up old install-scripts and package files..." >>$log
 
 [ $(echo -n I | od -to2 | awk '{ print substr($2,6,1); exit}') == 0 ] && arch='mips' || arch='mipsel'
 
+
+
+
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
+
+#check for 0.9.0.3 against repacked version
+[ -f $cfgusrdir/olsrd_0.9.0.3-1_mips.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "3898fc5f921dfc4cc622558e49a1d255" ] &&
+forceinstall=1
+
+[ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "ae06b3994f1f220aacd3f72ae32dcd53" ] &&
+forceinstall=1
+#mipsel    : d568f9210e50b28d8c377b79a4a75a81
+#mipsel-plg: e6ff2962df18adda385530c7b2779064
+#end-check for 0.9.0.3 against repacked version
+
 # base64: olsrd_0.9.0.3-1_mips.deb
 echo "
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI3Njg4NyAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
@@ -9711,6 +9727,17 @@ qHf4yXf1eeUn6utX3veJVaGV8H5VKFR/H1FWWQFTt0r9vnJNfgO5fDSrKCSbTuft0jnF/4L+TOif
 fi
 
 if [ $arch == 'mipsel' ]; then
+
+#check for 0.9.0.3 against repacked version
+[ -f $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "d568f9210e50b28d8c377b79a4a75a81" ] &&
+forceinstall=1
+
+[ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "e6ff2962df18adda385530c7b2779064" ] &&
+forceinstall=1
+#end-check for 0.9.0.3 against repacked version
+
 # base64: olsrd_0.9.0.3-1_mipsel.deb
 echo "
 ITxhcmNoPgpkZWJpYW4tYmluYXJ5ICAgMTU1MTI4MzYzMiAgMCAgICAgMCAgICAgMTAwNjQ0ICA0
@@ -19548,7 +19575,7 @@ load () {
         version_latest_ondisk=$(ls /config/user-data/olsrd_* | cut -d_ -f2 | sort -r | head -1)
         ## each separate version number must be less than 3 digit wide for this function!
         function version { echo "$@" | awk -F. '{ printf("%03d%03d%03d\n", $1,$2,$3); }'; }
-        if [ "$(version "${version_latest_ondisk:0:5}")" -gt "$(version "${version_installed:0:5}")" ]; then
+        if [ "$forceinstall" ] || [ "$(version "${version_latest_ondisk:0:5}")" -gt "$(version "${version_installed:0:5}")" ]; then
             echo "new olsrd packages found, trying to install packages." >>$log
             installolsrd >>$log 2>>$log
             if [[ $? == 0 ]]; then
