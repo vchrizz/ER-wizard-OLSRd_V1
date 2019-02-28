@@ -19774,12 +19774,19 @@ load () {
     [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=''
 
     #olsrd4 advanced settings
-    #d4mainip d4rtprotostd d4rttablestd
     d4mainip=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw mainip | awk '{print $2}')
     d4rtprotostd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw rtproto | awk '{print $2}')
     d4rttablestd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw rttable | awk '{print $2}')
-    
-    d4advanced=',"d4mainip":"'$d4mainip'","d4rtprotostd":"'$d4rtprotostd'","d4rttablestd":"'$d4rttablestd'"'
+    d4rttabletun=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTableTunnel  | awk '{print $2}')
+    d4rttabledef=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTableDefault | awk '{print $2}')
+    d4advanced=',"d4mainip":"'$d4mainip'","d4rtprotostd":"'$d4rtprotostd'","d4rttablestd":"'$d4rttablestd'","d4rttabletun":"'$d4rttabletun'","d4rttabledef":"'$d4rttabledef'"'
+
+    #d4priotable=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTablePriority  | awk '{print $2}')
+    #d4prioolsr=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTableDefaultOlsrPriority  | awk '{print $2}')
+    #d4priotun=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTableTunnelPriority  | awk '{print $2}')
+    #d4priodef=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw RtTableDefaultPriority  | awk '{print $2}')
+    #d4advanced=$d4advanced',"d4priotable":"'$d4priotable'","d4prioolsr":"'$d4prioolsr'","d4priotun":"'$d4priotun'","d4priodef":"'$d4priodef'"'
+
     
     ###############################
     #  IPv6 OLSRd LOAD function   #
@@ -19861,8 +19868,15 @@ load () {
     d6mainip=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw mainip | awk '{print $2}')
     d6rtprotostd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw rtproto | awk '{print $2}')
     d6rttablestd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw rttable | awk '{print $2}')
-    
-    d6advanced=',"d6mainip":"'$d6mainip'","d6rtprotostd":"'$d6rtprotostd'","d6rttablestd":"'$d6rttablestd'"'
+    d6rttabletun=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTableTunnel  | awk '{print $2}')
+    d6rttabledef=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTableDefault | awk '{print $2}')
+    d6advanced=',"d6mainip":"'$d6mainip'","d6rtprotostd":"'$d6rtprotostd'","d6rttablestd":"'$d6rttablestd'","d6rttabletun":"'$d6rttabletun'","d6rttabledef":"'$d6rttabledef'"'
+
+    #d6priotable=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTablePriority  | awk '{print $2}')
+    #d6prioolsr=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTableDefaultOlsrPriority  | awk '{print $2}')
+    #d6priotun=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTableTunnelPriority  | awk '{print $2}')
+    #d6priodef=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw RtTableDefaultPriority  | awk '{print $2}')
+    #d6advanced=$d6advanced',"d6priotable":"'$d6priotable'","d6prioolsr":"'$d6prioolsr'","d6priotun":"'$d6priotun'","d6priodef":"'$d6priodef'"'
 
     ###############################
     #  IPv6 OLSRd LOAD done       #
@@ -20233,20 +20247,24 @@ apply () {
         fi
     }
     
+    #advanced settings
     #MainIp
     mainip=$(jq -M -r '.d4mainip' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf MainIp "$mainip"
-    
-    #RtProto -> 0..254,
+    #RtProto -> 0..254
     rtproto=$(jq -M -r '.d4rtprotostd' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf RtProto "$rtproto"
-    
     #RtTable -> 0..254, auto
     #ip -4 route show table all | grep -oE " table [a-zA-Z0-9]+ " | sort -u | awk '{print $2}'
     #sed -e 's/[ \t]*#.*$//' -e '/^[ \t]*$/d' -e 's/[ \t]?/,/ig' /etc/iproute2/rt_tables
     rttable=$(jq -M -r '.d4rttablestd' $INPUT 2>/dev/null)
     advanced_setting $olsrd4conf RtTable "$rttable"
-    
+    #RtTableTunnel
+    rttabletun=$(jq -M -r '.d4rttabletun' $INPUT 2>/dev/null)
+    advanced_setting $olsrd4conf RtTableTunnel "$rttabletun"
+    #RtTableDefault
+    rttabledef=$(jq -M -r '.d4rttabledef' $INPUT 2>/dev/null)
+    advanced_setting $olsrd4conf RtTableDefault "$rttabledef"
 
     ###############################
     #  IPv6 OLSRd APPLY function  #
@@ -20436,6 +20454,12 @@ apply () {
     #RtTable
     rttable=$(jq -M -r '.d6rttablestd' $INPUT 2>/dev/null)
     advanced_setting $olsrd6conf RtTable "$rttable"
+    #RtTableTunnel
+    rttabletun=$(jq -M -r '.d6rttabletun' $INPUT 2>/dev/null)
+    advanced_setting $olsrd6conf RtTableTunnel "$rttabletun"
+    #RtTableDefault
+    rttabledef=$(jq -M -r '.d6rttabledef' $INPUT 2>/dev/null)
+    advanced_setting $olsrd6conf RtTableDefault "$rttabledef"
 
 
     ###############################

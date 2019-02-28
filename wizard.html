@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+ and 2.0+)
-versioninfo=201902285
+versioninfo=201902286
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201801260
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -203,8 +203,20 @@ div.olsrlogo {
   <table border="0">
     <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d4mainip" name="d4mainip" type="text" size="12" title="main-ipv4" /> 
        Choose from your OLSR-enabled IPv4 the primary Originator IP</td></tr>
-    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="6" title="table nr, i.e. 100" /> 
-       Enter the routing table number into which olsrd should add its routes</td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="6" title="table nr, i.e. 100, 0..254" /> 
+       Enter the routing table number into which olsrd should add <b>host routes</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnel</td><td><input style="right:10px" id="d4rttabletun" name="d4rttabletun" type="text" size="6" title="table nr, i.e. 101, 0..254" /> 
+       Enter the routing table number into which olsrd should add <b>routes to ipip tunnels</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefault</td><td><input style="right:10px" id="d4rttabledef" name="d4rttabledef" type="text" size="6" title="table nr, i.e. 102, 0..254" /> 
+       Enter the routing table number into which olsrd should add the <b>default route</b></td></tr>
+    <!--tr><td style="vertical-align:middle">RtTablePriority</td><td><input style="right:10px" id="d4priotable" name="d4priotable" type="text" size="6" title="priority, i.e. 100" /> 
+       Enter policy rule priority for smartgateway routing (enter only when all 3 routing tables are configured)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultOlsrPriority</td><td><input style="right:10px" id="d4prioolsr" name="d4prioolsr" type="text" size="6" title="priority nr, i.e. 200" /> 
+       Enter policy rule priority for routing table RtTable (must be higher than RtTablePriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnelPriority</td><td><input style="right:10px" id="d4priotun" name="d4priotun" type="text" size="6" title="priority nr, i.e. 300" /> 
+       Enter policy rule priority for routing table RtTableTunnel (must be again higher than RtTableDefaultOlsrPriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultPriority</td><td><input style="right:10px" id="d4priodef" name="d4priodef" type="text" size="6" title="priority nr, i.e. 400" /> 
+       Enter policy rule priority for routing table RtTableDefault (must be again higher than RtTableTunnelPriority)</td></tr-->
     <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d4rtprotostd" name="d4rtprotostd" type="text" size="6" title="proto tag, i.e. 15, 0..254" /> 
        Enter the protocol number to tag the routing table entries with</td></tr>
     </table>
@@ -287,8 +299,20 @@ div.olsrlogo {
   <table border="0">
     <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d6mainip" name="d6mainip" type="text" size="20" title="main-ipv6" /> 
        Choose from your OLSR-enabled IPv6 the primary Originator IP</td></tr>
-    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d6rttablestd" name="d6rttablestd" type="text" size="6" title="table nr, i.e. 100, 0.254" /> 
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d6rttablestd" name="d6rttablestd" type="text" size="6" title="table nr, i.e. 100, 0..254" /> 
        Enter the routing table number into which olsrd6 should add its routes</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnel</td><td><input style="right:10px" id="d6rttabletun" name="d6rttabletun" type="text" size="6" title="table nr, i.e. 101, 0..254" /> 
+       Enter the routing table number into which olsrd6 should add <b>routes to ipip tunnels</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefault</td><td><input style="right:10px" id="d6rttabledef" name="d6rttabledef" type="text" size="6" title="table nr, i.e. 102, 0..254" /> 
+       Enter the routing table number into which olsrd6 should add the <b>default route</b></td></tr>
+    <!--tr><td style="vertical-align:middle">RtTablePriority</td><td><input style="right:10px" id="d6priotable" name="d6priotable" type="text" size="6" title="priority, i.e. 100" /> 
+       Enter policy rule priority for smartgateway routing (enter only when all 3 routing tables are configured)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultOlsrPriority</td><td><input style="right:10px" id="d6prioolsr" name="d6prioolsr" type="text" size="6" title="priority nr, i.e. 200" /> 
+       Enter policy rule priority for routing table RtTable (must be higher than RtTablePriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnelPriority</td><td><input style="right:10px" id="d6priotun" name="d6priotun" type="text" size="6" title="priority nr, i.e. 300" /> 
+       Enter policy rule priority for routing table RtTableTunnel (must be again higher than RtTableDefaultOlsrPriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultPriority</td><td><input style="right:10px" id="d6priodef" name="d6priodef" type="text" size="6" title="priority nr, i.e. 400" /> 
+       Enter policy rule priority for routing table RtTableDefault (must be again higher than RtTableTunnelPriority)</td></tr-->
     <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d6rtprotostd" name="d6rtprotostd" type="text" size="6" title="proto tag, i.e.  15, 0..254" /> 
        Enter the protocol number to tag the routing table entries with</td></tr>
     </table>

@@ -19,9 +19,21 @@
  ,"d4mainip":{ "ipv4":1 }
  ,"d4rtprotostd":{ "number":1 }
  ,"d4rttablestd":{ "number":1 }
+ ,"d4rttabletun":{ "number":1 }
+ ,"d4rttabledef":{ "number":1 }
+ ,"d4priotable":{ "number":1 }
+ ,"d4prioolsr":{ "number":1 }
+ ,"d4priotun":{ "number":1 }
+ ,"d4priodef":{ "number":1 }
  ,"d6mainip":{ "ipv6":1 }
  ,"d6rtprotostd":{ "number":1 }
  ,"d6rttablestd":{ "number":1 }
+ ,"d6rttabletun":{ "number":1 }
+ ,"d6rttabledef":{ "number":1 }
+ ,"d6priotable":{ "number":1 }
+ ,"d6prioolsr":{ "number":1 }
+ ,"d6priotun":{ "number":1 }
+ ,"d6priodef":{ "number":1 }
  ,"hna4mask":{
     "required":"true"
    ,"number":1
