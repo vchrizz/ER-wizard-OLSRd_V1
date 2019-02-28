@@ -19773,6 +19773,13 @@ load () {
     done
     [ "$lq4list" ] && lq4list='"lq4list":['${lq4list%","}'],' || lq4list=''
 
+    #olsrd4 advanced settings
+    #d4mainip d4rtprotostd d4rttablestd
+    d4mainip=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw mainip | awk '{print $2}')
+    d4rtprotostd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw rtproto | awk '{print $2}')
+    d4rttablestd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | grep -iw rttable | awk '{print $2}')
+    
+    d4advanced=',"d4mainip":"'$d4mainip'","d4rtprotostd":"'$d4rtprotostd'","d4rttablestd":"'$d4rttablestd'"'
     
     ###############################
     #  IPv6 OLSRd LOAD function   #
@@ -19848,6 +19855,14 @@ load () {
         lq6list=$lq6list'{"lq6address":"'$ip'","lq6value":"'$value'"},'
     done
     [ "$lq6list" ] && lq6list='"lq6list":['${lq6list%","}'],' || lq6list=''
+
+    #olsrd6 advanced settings
+    #d6mainip d6rtprotostd d6rttablestd
+    d6mainip=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw mainip | awk '{print $2}')
+    d6rtprotostd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw rtproto | awk '{print $2}')
+    d6rttablestd=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | grep -iw rttable | awk '{print $2}')
+    
+    d6advanced=',"d6mainip":"'$d6mainip'","d6rtprotostd":"'$d6rtprotostd'","d6rttablestd":"'$d6rttablestd'"'
 
     ###############################
     #  IPv6 OLSRd LOAD done       #
@@ -19936,8 +19951,8 @@ ebtables -P FORWARD DROP' /config/scripts/pre-config.d/ebtables.sh >>$log 2>>$lo
     olsrdsettings=$olsrdsettings'}]'
 
     # get all variables together for output
-    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]"
-    ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6plugins$hna6list$lq6list\"olsrd6config\":[$olsrd6interfaces]"
+    ipv4conf="$olsrd4enabled$olsrd4runonboot$olsrd4plugins$hna4list$lq4list\"olsrd4config\":[$olsrd4interfaces]$d4advanced"
+    ipv6conf="$olsrd6enabled$olsrd6runonboot$olsrd6plugins$hna6list$lq6list\"olsrd6config\":[$olsrd6interfaces]$d6advanced"
     echo -n "{\"success\":\"1\",\"data\":{ $olsrdpkgstatus,$olsrddaemonstatus,$olsrdsetupscript,$updatestatus$autoupdatefromgithub,$ipv4conf,$ipv6conf,$olsrdsettings },"
     #echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\",\"silent\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
     echo "\"definition\":{ \"meshmode\":{\"options\":[\"mesh\",\"ether\"]}, \"autochanges\":{\"options\":[\"yes\",\"no\"]} }}"
@@ -20200,6 +20215,34 @@ apply () {
         fi
     fi
 
+    #advanced settings
+    function advanced_setting() {
+        file="$1"
+        key="$2"
+        value="$3"
+        if [ "$value" ]; then
+            current=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $file | grep -i $key | awk '{print $2}')
+            if [ "$current" == "$value" ]; then
+              sed -i 's/^[ \t]*'$key'[ \t]*.*$/'$key' '$value'/' $file
+            elif [ ! "$current" ]; then
+              line=$(grep -n "InterfaceDefaults" $file | cut -d: -f1)
+              [ "$line" ] && enter=$(expr $line - 2) && sed -i $enter'i\'$key' '$value $file
+            fi
+        else
+            (grep -qE "^[ \t]*$key[ \t]" $file) && sed -i '/^[ \t]*'$key'[ \t]*/d' $file
+        fi
+    }
+    
+    #MainIp
+    mainip=$(jq -M -r '.d4mainip' $INPUT 2>/dev/null)
+    advanced_setting $olsrd4conf MainIp "$mainip"
+    #RtProto
+    rtproto=$(jq -M -r '.d4rtprotostd' $INPUT 2>/dev/null)
+    advanced_setting $olsrd4conf RtProto "$rtproto"
+    #RtTable
+    rttable=$(jq -M -r '.d4rttablestd' $INPUT 2>/dev/null)
+    advanced_setting $olsrd4conf RtTable "$rttable"
+    
 
     ###############################
     #  IPv6 OLSRd APPLY function  #

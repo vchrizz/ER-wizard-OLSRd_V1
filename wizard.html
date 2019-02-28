@@ -2,7 +2,7 @@
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
 Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+ and 2.0+)
-versioninfo=201902282
+versioninfo=201902283
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201801260
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -195,6 +195,16 @@ div.olsrlogo {
         </td></tr>
         </table>
     </div>
+</fieldset>
+
+<fieldset id="olsrd4adv" name="olsrd4advanced" class="primary closed">
+    <legend>OLSRd IPv4 Advanded Options</legend>
+    <!-- MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority  -->
+  <table border="0">
+    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d4mainip" name="d4mainip" type="text" size="80" title="main-ipv4" /></td></tr>
+    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d4rtprotostd" name="d4rtprotostd" type="text" size="80" title="proto tag, i.e. olsr1" /></td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="80" title="table nr, i.e. 100" /></td></tr>
+    </table>
 </fieldset>
 
 <fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary closed">
