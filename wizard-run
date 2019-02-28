@@ -170,6 +170,9 @@ ENDSCRIPTCONTENT
 
 echo "Starting Wizard-Installation Block ... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 
+#rename /config/user-data/olsrd.default to /config/user-data/olsrd4.default
+[ -f /config/user-data/olsrd.default ] && [ ! -f $olsrd4def ] && mv /config/user-data/olsrd.default $olsrd4def
+
 # migrate ebtables command to correct location
 if [ $(grep -E "^#olsrdwizard:|^ebtables\ \-P\ FORWARD\ DROP" /etc/rc.local | wc -l) == 2 ]; then
     # old setup using rc.local detected, migrate to pre-config.d
@@ -19384,7 +19387,7 @@ setupv4olsrd () {
         mv $conffile /config/user-data/olsrd4.bak
         conffile="/config/user-data/olsrd4.bak"
         cp /etc/olsrd/olsrd.conf $olsrd4conf
-        mv /config/user-data/olsrd.default /config/user-data/olsrd.default.bak
+        mv /config/user-data/olsrd4.default /config/user-data/olsrd4.default.bak
         # basics
         basics=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' -e '/^.*{/I,/}/d' $conffile | grep -iE "MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority" | sed '$!s/$/\\/')
         [ "$basics" ] && sed -e '/^[ \t]*ipversion.*/Ia\' -e "$basics" $olsrd4conf
@@ -19396,7 +19399,7 @@ setupv4olsrd () {
         weight=$(echo "$settings" | grep -i weight | awk '{print $2}' | tr -d '"')
         #interface-defaults
         [ "$weight" ] && echo Weight: $weight >>$log && sed -i '/^[ \t]*interfacedefaults/I,/}/ { s/^[ \t]*weight[ \t]\+[0-9]\+.*$/Weight '$weight'/Ig }' $olsrd4conf
-        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd.default.bak | awk -F'=' '{print $2}' | tr -d '"'); do
+        for int in $(grep -E 'MESH_IF.*=.*"' /config/user-data/olsrd4.default.bak | awk -F'=' '{print $2}' | tr -d '"'); do
           echo "## $int ##"
           [ "$mode" ] && echo Mode: $mode >>$log && new1='    Mode "'$mode'"\n' || new1=""
           [ "$autodetectchanges" ] && echo autodetectchanges: $autodetectchanges >>$log && new2='    AutoDetectChanges '$autodetectchanges'\n' || new2=""
@@ -19431,7 +19434,7 @@ setupv4olsrd () {
         [ "$hna4" ] && sed -i "/Hna4/,/^}/s/^}/$hna4 \n}/g" $olsrd4conf
         #
         #enabled on boot
-        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd.default.bak 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
+        startonboot=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /config/user-data/olsrd4.default.bak 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES")
         [ "$startonboot" -eq 1 ] && echo "## start-on-boot ##" >>$log
         if [ "$startonboot" -eq 1 ]; then
             sed -i 's/.*START_OLSRD.*/START_OLSRD="YES"/' $olsrd4default
