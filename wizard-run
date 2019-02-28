@@ -19639,10 +19639,9 @@ load () {
       [[ $(ls /etc/rc$defrunlvl.d/S*olsrd 2>/dev/null) ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
     else
       /lib/systemd/systemd-sysv-install is-enabled olsrd 2>/dev/null
-      [[ $? -eq 0 ]] olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
+      [[ $? -eq 0 ]] && olsrd4runonboot='"olsrd4runonboot":"on",' || olsrd4runonboot='"olsrd4runonboot":"",'
     fi
     
-
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd4meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd4conf | tr -d \")
     olsrd4interfaces=''
@@ -19784,9 +19783,9 @@ load () {
       [[ $(ls /etc/rc$defrunlvl.d/S*olsrd6 2>/dev/null) ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd6runonboot":"",'
     else
       /lib/systemd/systemd-sysv-install is-enabled olsrd6 2>/dev/null
-      [[ $? -eq 0 ]] olsrd4runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd4runonboot":"",'
+      [[ $? -eq 0 ]] && olsrd6runonboot='"olsrd6runonboot":"on",' || olsrd6runonboot='"olsrd6runonboot":"",'
     fi
-
+    
     # get all running ethernet interfaces in format eth0;192.168.1.1/24
     olsrd6meshif=$(awk -F" " '/^Interface.*\{/ {print $2}' $olsrd6conf | tr -d \")
     olsrd6interfaces=''
@@ -20215,7 +20214,7 @@ apply () {
     olsrd6runonboot=$(jq -M -r '.olsrd6runonboot' $INPUT 2>/dev/null)
     if [ -f /etc/inittab ]; then
         defrunlvl=$(grep initdefault /etc/inittab | cut -d: -f2)
-        if [[ "$olsrd4runonboot" == "on" ]]; then
+        if [[ "$olsrd6runonboot" == "on" ]]; then
             if [[ ! -e $(ls /etc/rc$defrunlvl.d/S*olsrd6) ]]; then
                 update-rc.d olsrd6 defaults >>/dev/null
             fi
@@ -20227,8 +20226,8 @@ apply () {
     else
         /lib/systemd/systemd-sysv-install is-enabled olsrd6 2>/dev/null
         [[ $? -eq 0 ]] && rob=1 || rob=0
-        [[ "$olsrd4runonboot" == "on" ]] && rob=0 && /lib/systemd/systemd-sysv-install enable olsrd6
-        [[ ! "$olsrd4runonboot" ]] && rob=1 && /lib/systemd/systemd-sysv-install disable olsrd6
+        [[ "$olsrd6runonboot" == "on" ]] && rob=0 && /lib/systemd/systemd-sysv-install enable olsrd6
+        [[ ! "$olsrd6runonboot" ]] && rob=1 && /lib/systemd/systemd-sysv-install disable olsrd6
     fi
 
     # set checked interfaces, else set default interface
