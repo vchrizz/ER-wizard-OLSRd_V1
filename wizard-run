@@ -19349,7 +19349,7 @@ installolsrd () {
         fi
         #
         #install using force-overwrite
-        dpkg -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
+        dpkg --force-confnew -i ${olsrdpkg}  ${olsrdplgpkg} >>$log 2>>$log
         statusolsrd=$?
         if [[ $statusolsrd == 0 ]]; then
             echo "success: packages olsrd and olsrd-plugins installed correctly. done." >>$log
