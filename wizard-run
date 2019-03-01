@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0903r/20190228]
+# Version [0903r/20190301]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -19210,6 +19210,62 @@ e/xD9v/y++6/l/U/A+ZS9vhH/f/R76PfR7+PfvD7v0dDy1sASA0ACg==
 fi
 echo "extracted packages olsrd and olsrd-plugins" >>$log
 
+# source 20190301 https://gist.github.com/pocki80/eeea81945111ac14b937bd46b83412d2
+echo -n "execute install_links_script.sh..." >>$log
+# base64: install_links_script.sh
+echo "
+IyEvYmluL2Jhc2gKIyBwZXJzaXN0ZW50bHkgbG9jYXRlIHRoZSBsaW5rIHNjcmlwdAojCiMgSU5TVEFMTC9VUERBVEUgdmlhIENMSTogCiMgY3VybCAtc1MgaHR0cHM6Ly9naXN0LmdpdGh1YnVzZXJj
+b250ZW50LmNvbS9wb2NraTgwL2VlZWE4MTk0NTExMWFjMTRiOTM3YmQ0NmI4MzQxMmQyL3Jhdy9pbnN0YWxsX2xpbmtzX3NjcmlwdC5zaCB8IHN1ZG8gYmFzaDsgbGlua3MKCmNhdCA+L2NvbmZpZy9z
+Y3JpcHRzL3Bvc3QtY29uZmlnLmQvbGlua3NjcmlwdHNldHVwLnNoIDw8J0VORElOU1RBTExDT05URU5UJwojIS9iaW4vYmFzaAojIGluc3RhbGwgbGluayBzY3JpcHQgZmlsZSBpZiBtaXNzaW5nCmNh
+dCA+L3RtcC9saW5rc2NyaXB0ZmlsZSA8PCdFTkRTQ1JJUFRDT05URU5UJwojIS9iaW4vYmFzaAojIE9MU1JEIExpbmtzCiMgL3Vzci9sb2NhbC9iaW4vbGlua3MKaXA9MTI3LjAuMC4xCmlmIFtbICQo
+cGdyZXAgLXggb2xzcmQpIF1dOyB0aGVuClsgLWYgL2V0Yy9kZWZhdWx0L29sc3JkIF0gJiYgY29uZmZpbGU9JChhd2sgLUYiLWYgIiAnL0RBRU1PTl9PUFRTL3twcmludCAkMn0nIC9ldGMvZGVmYXVs
+dC9vbHNyZCB8IHRyIC1kIFwiKQpbICIkY29uZmZpbGUiIF0gfHwgY29uZmZpbGU9Ii9ldGMvb2xzcmQvb2xzcmQuY29uZiIKY29uZj0kKHNlZCAtbiAiL15Mb2FkUGx1Z2luIFwib2xzcmRfdHh0aW5m
+by5zby4vLC9efS9wIiAkY29uZmZpbGUgfCBjdXQgLWQiIyIgLWYxIHwgc2VkICcvXiAqJC9kJykKaWYgWyAiJGNvbmYiIF07IHRoZW4KICBwb3J0PSQoZWNobyAiJGNvbmYiIHwgZ3JlcCAtaSAicG9y
+dCIgfCBhd2sgJ3twcmludCAkM30nIHwgdHIgLWQgJyInKQogIFsgIiRwb3J0IiBdIHx8IHBvcnQ9MjAwNgogIGVjaG8gIm9sc3JkIGxpbmtzIGZyb20gdHh0aW5mb19wbHVnaW4iCiAgZWNobyAiTG9j
+YWwgSVAgICAgICAgICBSZW1vdGUgSVAgICAgICAgICAgSHlzdC4gIExRICAgICAgTkxRICAgICBDb3N0ICAjcnRzIGRlZj8iCiAgZm9yIGxpbmUgaW4gJChjdXJsIC1zICRpcDokcG9ydC9saW4gfCBn
+cmVwIC1FICJeWzAtOV0iIHwgYXdrICd7cHJpbnRmICIlcywlcywlcywlcywlcywlc1xuIiwkMSwkMiwkMywkNCwkNSwkNn0nIHwgc2VkIC1lICdzL0lORklOSVRFL0lORlQvaWcnIHwgc29ydCk7IGRv
+CiAgICBuPSQoZWNobyAkbGluZSB8IGF3ayAtRiIsIiAne3ByaW50ICQyfScpCiAgICAoL3NiaW4vaXAgLTQgcm91dGUgfCBncmVwIGRlZmF1bHQgfCBncmVwIC1xICRuKSAmJiBkPSJkZWZhdWx0IiB8
+fCBkPSctJwogICAgYz0kKC9zYmluL2lwIC00IHJvdXRlIHwgZ3JlcCBvbmxpbmsgfCBncmVwIC13YyAkbikKICAgIGVjaG8gJGQiLCIkbGluZSIsIiRjIHwgYXdrIC1GIiwiICd7cHJpbnRmICIlLTE3
+cyUtMTdzJTZzJThzJThzJThzICU0cyAlc1xuIiwgJDIsJDMsJDQsJDUsJDYsJDcsJDgsJDF9JwogIGRvbmUKZWxzZQogIGNvbmY9JChzZWQgLW4gIi9eTG9hZFBsdWdpbiBcIm9sc3JkX2h0dHBpbmZv
+LnNvLi8sL159L3AiICRjb25mZmlsZSB8IGN1dCAtZCIjIiAtZjEgfCBzZWQgJy9eICokL2QnKQogIGlmIFsgIiRjb25mIiBdOyB0aGVuCiAgICBwb3J0PSQoZWNobyAiJGNvbmYiIHwgZ3JlcCAtaSAi
+cG9ydCIgfCBhd2sgJ3twcmludCAkM30nIHwgdHIgLWQgJyInKQogICAgWyAiJHBvcnQiIF0gfHwgcG9ydD0xOTc4CiAgICBlY2hvICJvbHNyZCBsaW5rcyBmcm9tIGh0dHBpbmZvX3BsdWdpbiIKICAg
+IGVjaG8gIkxvY2FsIElQICAgICAgICAgUmVtb3RlIElQICAgICAgICAgIEh5c3QuICBMUSAgICAgIE5MUSAgICAgQ29zdCAgI3J0cyBkZWY/IgogICAgZm9yIGxpbmUgaW4gJChjdXJsIC1zICRpcDok
+cG9ydC9ub2RlcyB8IHNlZCAtbiAiL148aDI+TGlua3MvLC9ePGgyPk5laWdoYm9ycy9wIiB8IHNlZCAtZSAncy9bXC8pKCA8Pl0vIy9nJyB8IGF3ayAtRiIjIiAnL2FsbC8ge3ByaW50ZiAiJXMsJXMs
+JXMsJXMsJXMsJXNcbiIsICQxMSwkMjUsJDMzLCQzOSwkNDAsJDQyfScgfCBzZWQgLWUgJ3MvSU5GSU5JVEUvSU5GVC9pZycgfCBzb3J0KTsgZG8KICAgICAgbj0kKGVjaG8gJGxpbmUgfCBhd2sgLUYi
+LCIgJ3twcmludCAkMn0nKQogICAgICAoL3NiaW4vaXAgLTQgcm91dGUgfCBncmVwIGRlZmF1bHQgfCBncmVwIC1xICRuKSAmJiBkPSJkZWZhdWx0IiB8fCBkPSctJwogICAgICBjPSQoL3NiaW4vaXAg
+LTQgcm91dGUgfCBncmVwIG9ubGluayB8IGdyZXAgLXdjICRuKQogICAgICBlY2hvICRkIiwiJGxpbmUiLCIkYyB8IGF3ayAtRiIsIiAne3ByaW50ZiAiJS0xN3MlLTE3cyU2cyU4cyU4cyU4cyAlNHMg
+JXNcbiIsICQyLCQzLCQ0LCQ1LCQ2LCQ3LCQ4LCQxfScKICAgIGRvbmUKICBlbHNlCiAgICBjb25mPSQoc2VkIC1uICIvXkxvYWRQbHVnaW4gXCJvbHNyZF9qc29uaW5mby5zby4vLC9efS9wIiAkY29u
+ZmZpbGUgfCBjdXQgLWQiIyIgLWYxIHwgc2VkICcvXiAqJC9kJykKICAgIGlmIFsgIiRjb25mIiBdOyB0aGVuCiAgICAgIHBvcnQ9JChlY2hvICIkY29uZiIgfCBncmVwIC1pICJwb3J0IiB8IGF3ayAn
+e3ByaW50ICQzfScgfCB0ciAtZCAnIicpCiAgICAgIFsgIiRwb3J0IiBdIHx8IHBvcnQ9OTA5MAogICAgICBlY2hvICJvbHNyZCBsaW5rcyBmcm9tIGpzb25pbmZvX3BsdWdpbiIKICAgICAgZWNobyAi
+TG9jYWwgSVAgICAgICAgICBSZW1vdGUgSVAgICAgICAgICAgSHlzdC4gIExRICAgICAgTkxRICAgICBDb3N0ICAjcnRzIGRlZj8iCiAgICAgIGZvciBsaW5lIGluICQoZm9yIGwgaW4gJChjdXJsIC1z
+ICRpcDokcG9ydC9saW5rcyB8IGpxIC1yICcuWyJsaW5rcyJdW10gfCAiXCgubG9jYWxJUCkjXCgucmVtb3RlSVApI1woLmh5c3RlcmVzaXMpI1woLmxpbmtRdWFsaXR5KSNcKC5uZWlnaGJvckxpbmtR
+dWFsaXR5KSNcKC5saW5rQ29zdCkjXCgub2xzckludGVyZmFjZSkiJyAyPi9kZXYvbnVsbCk7IGRvIGVjaG8gJGwgfCBhd2sgLUYiIyIgJ3twcmludGYgIiVzLCVzLCVzLCU3LjNmLCU3LjNmLCU3LjNm
+XG4iLCAkMSwkMiwkMywkNCwkNSwkNn0nIHwgc2VkIC1lICdzLyAvL2lnJzsgZG9uZSB8IHNvcnQpOyBkbwogICAgICAgIG49JChlY2hvICRsaW5lIHwgYXdrIC1GIiwiICd7cHJpbnQgJDJ9JykKICAg
+ICAgICAoL3NiaW4vaXAgLTQgcm91dGUgfCBncmVwIGRlZmF1bHQgfCBncmVwIC1xICRuKSAmJiBkPSJkZWZhdWx0IiB8fCBkPSctJwogICAgICAgIGM9JCgvc2Jpbi9pcCAtNCByb3V0ZSB8IGdyZXAg
+b25saW5rIHwgZ3JlcCAtd2MgJG4pCiAgICAgICAgZWNobyAkZCIsIiRsaW5lIiwiJGMgfCBhd2sgLUYiLCIgJ3twcmludGYgIiUtMTdzJS0xN3MlNnMlOHMlOHMlOHMgJTRzICVzXG4iLCAkMiwkMywk
+NCwkNSwkNiwkNywkOCwkMX0nCiAgICAgIGRvbmUKICAgIGVsc2UKICAgICAgZWNobyAib2xzcmQgbGlua3MgcmVjb2duaXplZCBmcm9tIGxvY2FsIHJvdXRpbmcgdGFibGUiCiAgICAgIGVjaG8gIklu
+dCAgIFJlbW90ZSBJUCAgICAgICAgQ250LVJvdXRlcyIKICAgICAgZm9yIGxpbmUgaW4gJCgvc2Jpbi9pcCAtNCByb3V0ZSB8IGdyZXAgb25saW5rIHwgYXdrICcheFskM10rKyB7cHJpbnQgJDUiOiIk
+M30nIHwgc29ydCk7IGRvCiAgICAgICAgbj0kKGVjaG8gJGxpbmUgfCBjdXQgLWQiOiIgLWYyKTsgaT0kKGVjaG8gJGxpbmUgfCBjdXQgLWQiOiIgLWYxKQogICAgICAgICgvc2Jpbi9pcCAtNCByb3V0
+ZSB8IGdyZXAgZGVmYXVsdCB8IGdyZXAgLXEgJG4pICYmIGQ9ImRlZmF1bHQiIHx8IGQ9Jy0nCiAgICAgICAgKGVjaG8gLW4gJGkgJG4gJGQiICIgJiYgL3NiaW4vaXAgLTQgcm91dGUgfCBncmVwIG9u
+bGluayB8IGdyZXAgLXdjICRuKSB8IGF3ayAne3ByaW50ZiAiJS02cyUtMTdzJTNzIHJvdXRlcyAlc1xuIiwgJDEsJDIsJDQsJDN9JwogICAgICBkb25lCiAgICBmaQogIGZpCmZpCmVsc2UKICBlY2hv
+ICJvbHNyZCBub3QgcnVubmluZyIKZmkKIyBPTFNSRDIgTGlua3MKaWYgW1sgJChwZ3JlcCAteCBvbHNyZDIpIF1dOyB0aGVuCiAgW1sgJChwZ3JlcCAteCBvbHNyZCkgXV0gJiYgZWNobyAiIgogIGVj
+aG8gIm9sc3JkMiBsaW5rcyBmcm9tIG5oZHBpbmZvIgogIGVjaG8gIkludCAgIFJlbW90ZSBJUHY2ICAgICAgICAgICAgICAgICAgICAgICAgIENudC1Sb3V0ZXMiCiAgZm9yIGxpbmUgaW4gJChjdXJs
+IC1zICRpcDo4MDAwL3RlbG5ldC9uaGRwaW5mbyUyMGxpbmtfYWRkciB8IGF3ayAne3ByaW50ICQxIiwiJDMiLCIkNH0nKTsgZG8KICAgIG49JChlY2hvICRsaW5lIHwgY3V0IC1kIiwiIC1mMik7IGk9
+JChlY2hvICRsaW5lIHwgY3V0IC1kIiwiIC1mMSkKICAgIFsgIiRuIiA9PSAiLSIgXSAmJiBuPSQoZWNobyAkbGluZSB8IGN1dCAtZCIsIiAtZjMpCiAgICBmPSQoaXAgLTYgciB8IGdyZXAgIiRuIGRl
+diAkaSIgfCBoZWFkIC0xIHwgYXdrICd7cHJpbnQgJDN9Jyk7IFsgIiRmIiBdIHx8IGY9JChlY2hvICRsaW5lIHwgY3V0IC1kIiwiIC1mMykKICAgICgvc2Jpbi9pcCAtNiByb3V0ZSB8IGdyZXAgZGVm
+YXVsdCB8IGdyZXAgLXEgJGYpICYmIGQ9ImRlZmF1bHQiIHx8IGQ9Jy0nCiAgICAoZWNobyAtbiAkaSAkbiAkZCIgIiAmJiAvc2Jpbi9pcCAtNiByb3V0ZSB8IGdyZXAgLXdjICRmKSB8IGF3ayAne3By
+aW50ZiAiJS02cyUtMzZzJTNzIHJvdXRlcyAlc1xuIiwgJDEsJDIsJDQsJDN9JwogIGRvbmUKZmkKRU5EU0NSSVBUQ09OVEVOVAoKaWYgWyAhIC1mIC91c3IvbG9jYWwvYmluL2xpbmtzIF07IHRoZW4K
+ICAjZWNobyAiaW5pdGlhbCBpbnN0YWxsIgogIFsgLWQgL3Vzci9sb2NhbCBdIHx8IG1rZGlyIC91c3IvbG9jYWwKICBbIC1kIC91c3IvbG9jYWwvYmluIF0gfHwgbWtkaXIgL3Vzci9sb2NhbC9iaW4K
+ICBjcCAvdG1wL2xpbmtzY3JpcHRmaWxlIC91c3IvbG9jYWwvYmluL2xpbmtzCmVsaWYgWyAkKHNoYTFzdW0gL3RtcC9saW5rc2NyaXB0ZmlsZSB8IGF3ayB7J3ByaW50ICQxJ30pICE9ICQoc2hhMXN1
+bSAvdXNyL2xvY2FsL2Jpbi9saW5rcyB8IGF3ayB7J3ByaW50ICQxJ30pIF07IHRoZW4KICAjZWNobyAidXBkYXRlZCBmaWxlIgogIGNwIC90bXAvbGlua3NjcmlwdGZpbGUgL3Vzci9sb2NhbC9iaW4v
+bGlua3MKI2Vsc2UKICAjZWNobyAibm90aGluZyB0byBkbyIKZmkKCmlmIFsgLWYgL3Vzci9sb2NhbC9iaW4vbGlua3MgXSAmJiBbICEgLXggL3Vzci9sb2NhbC9iaW4vbGlua3MgXTsgdGhlbgogIGVj
+aG8gImNobW9kIDc1NSBmaWxlIgogIGNobW9kIDc1NSAvdXNyL2xvY2FsL2Jpbi9saW5rcwpmaQooZ3JlcCAtcSAiL3Vzci9sb2NhbC9iaW4vbGlua3MiIC9yb290Ly5iYXNocmMpIHx8IGVjaG8gImFs
+aWFzIGxpbmtzPScvdXNyL2xvY2FsL2Jpbi9saW5rcyciID4+L3Jvb3QvLmJhc2hyYwooZ3JlcCAtcUUgImFsaWFzIGxsPS5scyAtYWwuIiAvcm9vdC8uYmFzaHJjKSB8fCBlY2hvICJhbGlhcyBsbD0n
+bHMgLWFsJyIgPj4vcm9vdC8uYmFzaHJjCnJtIC90bXAvbGlua3NjcmlwdGZpbGUKZXhpdCAwCkVORElOU1RBTExDT05URU5UCmNobW9kIDc1NSAvY29uZmlnL3NjcmlwdHMvcG9zdC1jb25maWcuZC9s
+aW5rc2NyaXB0c2V0dXAuc2gKL2NvbmZpZy9zY3JpcHRzL3Bvc3QtY29uZmlnLmQvbGlua3NjcmlwdHNldHVwLnNoCmVjaG8gImRvbmUiCmV4aXQgMAo=
+" | base64 -d | sudo bash >>$log 2>>$log
+# base64: end install_links_script.sh
+
 echo "Finished Wizard-Installation Block ... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 sed -i '/^#base64begin/,/^#base64end$/d' $0
 # !dont edit or remove this comment!
@@ -19443,11 +19499,11 @@ setupv4olsrd () {
             sed -i 's/.*START_OLSRD.*/#START_OLSRD="YES"/' $olsrd4def
         fi
         #
-        #plugins and pluginparameters
+        #plugins and pluginparameters: take
         plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
-            file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+            file=$(ls -1 /usr/lib/olsrd/$plugin.* 2>>/dev/null | tail -1 | cut -d '/' -f5)
             [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
             echo "## $plugin ## Filename $file" >>$log
             sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
@@ -19456,6 +19512,20 @@ setupv4olsrd () {
             sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' $conffile 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd4conf 2>>$log
           done
         fi
+    fi
+    #migration is done
+    #loop all plugins (even disabled ones) to put the correct filename of library
+    plugins=$(grep -iw loadplugin $olsrd4conf | awk '{print $2}' | tr -d '"')
+    if [ "$plugins" ]; then
+      for lib in $plugins; do
+        plugin=$(echo $lib | cut -d. -f1)
+        file=$(ls -1 /usr/lib/olsrd/$plugin.so.* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+        [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
+        if [ "$lib" != "$file" ]; then
+          [ -f $lib ] && echo "$plugin uses $lib, found newer $file, correcting olsrd4.conf"  >>$log || echo "$plugin needs $lib and found $file, correcting olsrd4.conf" >>$log
+          sed -i 's/LoadPlugin[ \t"'']*'$plugin'.so.[0-9.]*["'']*/LoadPlugin "'$file'"/' $olsrd4conf 
+        fi
+      done
     fi
     #trim tailing blanks/tabs
     sed -i 's/[ \t]*$//' $olsrd4conf
@@ -19546,7 +19616,7 @@ setupv6olsrd () {
         plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
-            file=$(ls -1 /usr/lib/olsrd/$plugin* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+            file=$(ls -1 /usr/lib/olsrd/$plugin.* 2>>/dev/null | tail -1 | cut -d '/' -f5)
             [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
             echo "## $plugin ## Filename $file" >>$log
             sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile 2>>$log | sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/p' 2>>$log | grep -i plparam 2>>$log | awk '{gsub("\"","",$0); print "  "$2"="$3}' >>$log 2>>$log
@@ -19555,6 +19625,20 @@ setupv6olsrd () {
             sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' $conffile 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd6conf 2>>$log
           done
         fi
+    fi
+    #migration is done
+    #loop all plugins (even disabled ones) to put the correct filename of library
+    plugins=$(grep -iw loadplugin $olsrd6conf | awk '{print $2}' | tr -d '"')
+    if [ "$plugins" ]; then
+      for lib in $plugins; do
+        plugin=$(echo $lib | cut -d. -f1)
+        file=$(ls -1 /usr/lib/olsrd/$plugin.so.* 2>>/dev/null | tail -1 | cut -d '/' -f5)
+        [ "$file" ] || (echo "Plugin $plugin not found in /usr/lib/olsrd" >>$log; continue)
+        if [ "$lib" != "$file" ]; then
+          [ -f $lib ] && echo "$plugin uses $lib, found newer $file, correcting olsrd6.conf"  >>$log || echo "$plugin needs $lib and found $file, correcting olsrd6.conf" >>$log
+          sed -i 's/LoadPlugin[ \t"'']*'$plugin'.so.[0-9.]*["'']*/LoadPlugin "'$file'"/' $olsrd6conf 
+        fi
+      done
     fi
     #trim tailing blanks/tabs
     sed -i 's/[ \t]*$//' $olsrd6conf
