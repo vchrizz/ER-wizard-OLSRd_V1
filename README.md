@@ -21,10 +21,10 @@ what to work on:
 * [done] UI: configure "main ip" for routers having multiple public IPs
 * [done] add RtProto, RtTable, RtTableDefault, MainIp, Weight to config-migration scripts
 * [done] tune default parameters of info-plugins (especially httpinfo plugin allowed hosts/subnets)
+* [done] establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
 * [dismissed] configure AutoDetectChanges for InterfaceDefaults
 * [dismissed] handle second+ IPs of an olsr interface as HNA automatically?
 * [dismissed] activate httpinfo, watchdog on install "by default"?
 * [dismissed] save important data to "custom-attributes" in EdgeOS configuration?
 * UI: paramsection for infoplugins (at least for httpinfo subnets/hosts)
-* establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
 * improve handling of bridges with ebtables! only block what is really needed (i.e. use --logical-in)
