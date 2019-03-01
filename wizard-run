@@ -7,11 +7,10 @@
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
 #
-# Works on all EdgeRouter and EdgePoint Devices (system version 1.9.0+)
+# Works on all EdgeRouter and EdgePoint Devices (system version 1.9.0+ and 2.0+)
 #
 # known bugs:
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
-# *) wizard.html: wrong position of olsrd logo in mozilla firefox (10px lower than should be)
 # updates:
 # *) 06/2018 wizard totally re-written
 #
