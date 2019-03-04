@@ -235,15 +235,15 @@ echo "clean up old install-scripts and package files..." >>$log
 echo "detected $arch architecture, extracting packages olsrd and olsrd-plugins ..." >>$log
 if [ $arch == 'mips' ]; then
 
-#check for 0.9.0.3 against repacked version
-[ -f $cfgusrdir/olsrd_0.9.0.3-1_mips.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "$chksum_mips" ] &&
+#check for 0.9.6.2 against repacked version
+[ -f $cfgusrdir/olsrd_0.9.6.2-1_mips.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd_0.9.6.2-1_mips.deb | cut -f1 -d" ") != "$chksum_mips" ] &&
 forceinstall=1
 
-[ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mips.deb | cut -f1 -d" ") != "$chksum_mips_plg" ] &&
+[ -f $cfgusrdir/olsrd-plugins_0.9.6.2-1_mips.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.6.2-1_mips.deb | cut -f1 -d" ") != "$chksum_mips_plg" ] &&
 forceinstall=1
-#end-check for 0.9.0.3 against repacked version
+#end-check for 0.9.6.2 against repacked version
 
 # base64: olsrd_0.9.6.2-1_mips.deb
 echo "
@@ -11206,15 +11206,15 @@ fi
 
 if [ $arch == 'mipsel' ]; then
 
-#check for 0.9.0.3 against repacked version
-[ -f $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "$chksum_mipsel" ] &&
+#check for 0.9.6.2 against repacked version
+[ -f $cfgusrdir/olsrd_0.9.6.2-1_mipsel.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd_0.9.6.2-1_mipsel.deb | cut -f1 -d" ") != "$chksum_mipsel" ] &&
 forceinstall=1
 
-[ -f $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb ] && 
-[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.0.3-1_mipsel.deb | cut -f1 -d" ") != "$chksum_mipsel_plg" ] &&
+[ -f $cfgusrdir/olsrd-plugins_0.9.6.2-1_mipsel.deb ] && 
+[ $(md5sum $cfgusrdir/olsrd-plugins_0.9.6.2-1_mipsel.deb | cut -f1 -d" ") != "$chksum_mipsel_plg" ] &&
 forceinstall=1
-#end-check for 0.9.0.3 against repacked version
+#end-check for 0.9.6.2 against repacked version
 
 # base64: olsrd_0.9.6.2-1_mipsel.deb
 echo "
