@@ -1,10 +1,12 @@
 # ER-wizard-OLSRd_V1
 OLSRd (V1) Wizard for Ubiquiti EdgeMAX Devices supporting Wizards
 
-branch to prepare new release including 0.9.7
+branch to refurbish the UI and to solve install issues on EdgeOS v2.0.0
+and to prepare new release including 0.9.7
 
 what to work on:
-* [done] new olsrd packages
+* [done] repacked olsrd packages 0.9.6.2
+* [done] support clean dpkg installation for EdgeOS v2.0
 * [done] fix paths to plugins (dynamically?)
 * [done] write a config migration script to move from "old" config style to "new" without dead freight
 * [done] new etc-init.d scripts including logging and watchdog handling
@@ -17,13 +19,13 @@ what to work on:
 * [done] UI: one line for each LQ entry (add and remove buttons), check syntax and values
 * [done] UI: select mode (mesh, silent, ether) for each interface individually
 * [done] UI: manage default-lq for each interface individually
+* [done] UI: configure "main ip" for routers having multiple public IPs
+* [done] add RtProto, RtTable, RtTableDefault, MainIp, Weight to config-migration scripts
+* [done] tune default parameters of info-plugins (especially httpinfo plugin allowed hosts/subnets)
+* [done] establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
+* [dismissed] configure AutoDetectChanges for InterfaceDefaults
+* [dismissed] handle second+ IPs of an olsr interface as HNA automatically?
+* [dismissed] activate httpinfo, watchdog on install "by default"?
+* [dismissed] save important data to "custom-attributes" in EdgeOS configuration?
 * UI: paramsection for infoplugins (at least for httpinfo subnets/hosts)
-* UI: configure "main ip" for routers having multiple public IPs
-* configure AutoDetectChanges for InterfaceDefaults
-* add RtProto, RtTable, RtTableDefault, MainIp, Weight to config-migration scripts
-* handle second+ IPs of an olsr interface as HNA automatically?
 * improve handling of bridges with ebtables! only block what is really needed (i.e. use --logical-in)
-* tune default parameters of info-plugins (especially httpinfo plugin allowed hosts/subnets)
-* activate httpinfo, watchdog on install "by default"?
-* establish "links" script in /usr/bin/local, as of this script: https://gist.githubusercontent.com/pocki80/eeea81945111ac14b937bd46b83412d2
-* save important data to "custom-attributes" in EdgeOS configuration?
