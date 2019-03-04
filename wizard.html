@@ -1,8 +1,8 @@
 <!--
 
 EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+)
-versioninfo=201810011
+Works on EdgeRouter and EdgeRouter X / X-SFP (system version 1.9.0+ and 2.0+)
+versioninfo=201903040
 ^-- use version identifier as number: YYYYMMDDX whereas X can be intraday-version
 autoupdate=201801260
 ^-- set autoupdate the same version identifier to allow autoupdates
@@ -24,22 +24,22 @@ div.olsrlogo {
 }
 </style>
 
+<legend style="position:absolute;right:0px;padding:5px;">
+    <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
+    <br>Version [0962r/20190304]</center>
+</legend>
 <div class="instructions">
     <h3>Optimized Link State Routing Protocol</h3>
     <div>The <a href="http://olsr.org" target="_blank">OLSR.org</a> OLSR Daemon (olsrd) is an implementation of the IETF <a href="http://tools.ietf.org/html/rfc3626" target="_blank">RFC 3626: Optimized Link State Routing Protocol</a>.</div>
     <div>OLSR is an IP routing protocol optimized for mobile ad hoc networks, which can also be used on other wireless ad hoc networks. As such it allows mesh routing for any network equipment.</div>
 </div>
-<legend style="position:absolute;right:0px;padding:5px;">
-    <center>EdgeMAX Wizard "OLSRd_V1" created 2016<br>by <a href="http://onetrix.net" target="_blank">Onetrix.net</a> for <a href="http://funkfeuer.at" target="_blank">FunkFeuer.at</a>
-    <br>Version [0962a/20181001]</center>
-</legend>
 
-<div style="padding:15px;border: 1px solid lightgray;width:648px">
+<div style="padding:15px;border: 1px solid lightgray;width:650px;float:none;clear:both;">
   <table border="0">
     <tr><td style="vertical-align:middle">Package Status:</td><td><input style="right:10px" id="pkgstatus" name="pkgstatus" type="text" size="80" disabled /></td></tr>
     <tr><td style="vertical-align:middle">Daemon Status:</td><td><input style="right:10px" id="daemonstatus" name="daemonstatus" type="text" size="80" disabled /></td></tr>
     <tr><td style="vertical-align:middle">Update Info:</td><td><input style="right:10px" id="updatestatus" name="updatestatus" type="text" size="80" disabled /></td></tr>
-    <tr><td colspan="2"><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script</span></div></td></tr>
+    <tr><td colspan="2"><div><span><input id="olsrdsetupscript" name="olsrdsetupscript" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When updating the Firmware, OLSR package gets lost (only data from /config/ directory will be copied over to newly installed system). Enable this Setup-Script to install and setup OLSRd with your current running-configuration after a Firmware upgrade. WARNING: DO NOT remove OLSRd Wizard if Setup-Script is enabled because it uses functions from this Wizard for setup.'>Setup Script (includes AutoStart)</span></div></td></tr>
     <tr><td colspan="2"><div><span><input id="updatefromgithub" name="updatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, the wizard will download and install the current version from github. During this process, olsr daemons will update and restart as well - this will interupt current connections for a couple of seconds. You need to refresh the EdgeRouter WebUI afterwards, as the browser session will need a restart.'>Upgrade Wizard on 'Apply'.</span></div></td></tr>
     <tr><td colspan="2"><div><span><input id="autoupdatefromgithub" name="autoupdatefromgithub" type="checkbox" />&nbsp;</span></div><div><span class="text" data-infotip='When checked, a daily cronjob will check for a new version on Github and install it automatically, if it is released to autoupdate.'>Upgrade Wizard from GitHub <b>automatically</b></span></div></td></tr>
   </table>
@@ -197,6 +197,31 @@ div.olsrlogo {
     </div>
 </fieldset>
 
+<fieldset id="olsrd4adv" name="olsrd4advanced" class="primary closed">
+    <legend>OLSRd IPv4 Advanded Options</legend>
+    <!-- MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority  -->
+  <table border="0">
+    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d4mainip" name="d4mainip" type="text" size="12" title="main-ipv4" /> 
+       Choose from your OLSR-enabled IPv4 the primary Originator IP</td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d4rttablestd" name="d4rttablestd" type="text" size="6" title="table nr, i.e. 100, 0..254" /> 
+       Enter the routing table number into which olsrd should add <b>host routes</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnel</td><td><input style="right:10px" id="d4rttabletun" name="d4rttabletun" type="text" size="6" title="table nr, i.e. 101, 0..254" /> 
+       Enter the routing table number into which olsrd should add <b>routes to ipip tunnels</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefault</td><td><input style="right:10px" id="d4rttabledef" name="d4rttabledef" type="text" size="6" title="table nr, i.e. 102, 0..254" /> 
+       Enter the routing table number into which olsrd should add the <b>default route</b></td></tr>
+    <!--tr><td style="vertical-align:middle">RtTablePriority</td><td><input style="right:10px" id="d4priotable" name="d4priotable" type="text" size="6" title="priority, i.e. 100" /> 
+       Enter policy rule priority for smartgateway routing (enter only when all 3 routing tables are configured)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultOlsrPriority</td><td><input style="right:10px" id="d4prioolsr" name="d4prioolsr" type="text" size="6" title="priority nr, i.e. 200" /> 
+       Enter policy rule priority for routing table RtTable (must be higher than RtTablePriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnelPriority</td><td><input style="right:10px" id="d4priotun" name="d4priotun" type="text" size="6" title="priority nr, i.e. 300" /> 
+       Enter policy rule priority for routing table RtTableTunnel (must be again higher than RtTableDefaultOlsrPriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultPriority</td><td><input style="right:10px" id="d4priodef" name="d4priodef" type="text" size="6" title="priority nr, i.e. 400" /> 
+       Enter policy rule priority for routing table RtTableDefault (must be again higher than RtTableTunnelPriority)</td></tr-->
+    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d4rtprotostd" name="d4rtprotostd" type="text" size="6" title="proto tag, i.e. 15, 0..254" /> 
+       Enter the protocol number to tag the routing table entries with</td></tr>
+    </table>
+</fieldset>
+
 <fieldset id="ipv6olsrd" name="ipv6olsrd" class="primary closed">
     <!-- issue: image-position; chrome and firefox count top-pixels from parent element differently; should be top:10px; -->
     <div title="Optimized Link State Routing Daemon" class="olsrlogo"></div>
@@ -267,6 +292,32 @@ div.olsrlogo {
         <div><span><input name="olsrd6plghttpinfo" type="checkbox" /></span></div><div><span class="text">httpinfo (tcp:8081)</span></div>
     </div>
 </fieldset>
+
+<fieldset id="olsrd6adv" name="olsrd6advanced" class="primary closed">
+    <legend>OLSRd IPv6 Advanded Options</legend>
+    <!-- MainIp|RtProto|RtTable|RtTableDefault|RtTableTunnel|RtTablePriority|RtTableDefaultOlsrPriority|RtTableTunnelPriority|RtTableDefaultPriority  -->
+  <table border="0">
+    <tr><td style="vertical-align:middle">MainIp</td><td><input style="right:10px" id="d6mainip" name="d6mainip" type="text" size="20" title="main-ipv6" /> 
+       Choose from your OLSR-enabled IPv6 the primary Originator IP</td></tr>
+    <tr><td style="vertical-align:middle">RtTable</td><td><input style="right:10px" id="d6rttablestd" name="d6rttablestd" type="text" size="6" title="table nr, i.e. 100, 0..254" /> 
+       Enter the routing table number into which olsrd6 should add its routes</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnel</td><td><input style="right:10px" id="d6rttabletun" name="d6rttabletun" type="text" size="6" title="table nr, i.e. 101, 0..254" /> 
+       Enter the routing table number into which olsrd6 should add <b>routes to ipip tunnels</b></td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefault</td><td><input style="right:10px" id="d6rttabledef" name="d6rttabledef" type="text" size="6" title="table nr, i.e. 102, 0..254" /> 
+       Enter the routing table number into which olsrd6 should add the <b>default route</b></td></tr>
+    <!--tr><td style="vertical-align:middle">RtTablePriority</td><td><input style="right:10px" id="d6priotable" name="d6priotable" type="text" size="6" title="priority, i.e. 100" /> 
+       Enter policy rule priority for smartgateway routing (enter only when all 3 routing tables are configured)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultOlsrPriority</td><td><input style="right:10px" id="d6prioolsr" name="d6prioolsr" type="text" size="6" title="priority nr, i.e. 200" /> 
+       Enter policy rule priority for routing table RtTable (must be higher than RtTablePriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableTunnelPriority</td><td><input style="right:10px" id="d6priotun" name="d6priotun" type="text" size="6" title="priority nr, i.e. 300" /> 
+       Enter policy rule priority for routing table RtTableTunnel (must be again higher than RtTableDefaultOlsrPriority)</td></tr>
+    <tr><td style="vertical-align:middle">RtTableDefaultPriority</td><td><input style="right:10px" id="d6priodef" name="d6priodef" type="text" size="6" title="priority nr, i.e. 400" /> 
+       Enter policy rule priority for routing table RtTableDefault (must be again higher than RtTableTunnelPriority)</td></tr-->
+    <tr><td style="vertical-align:middle">RtProto</td><td><input style="right:10px" id="d6rtprotostd" name="d6rtprotostd" type="text" size="6" title="proto tag, i.e.  15, 0..254" /> 
+       Enter the protocol number to tag the routing table entries with</td></tr>
+    </table>
+</fieldset>
+
 
 <fieldset id="olsrdsettings" name="olsrdgeneralconf" class="primary closed">
     <legend>Common OLSR Settings</legend>
