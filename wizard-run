@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962r/20190304]
+# Version [0962r68/20190309]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -12,7 +12,7 @@
 # known bugs:
 # *) WebUI: feature wizard "TCP MSS clamping" hangs when feature wizard "OLSRd_V1" is added
 # updates:
-# *) 06/2018 wizard totally re-written
+# *) 06/2018-03/2019 wizard totally re-written, upgrades to gitcommit v0.9.6.2-68-ga24e20a
 #
 
 ACTION=$1
@@ -33,7 +33,7 @@ olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 #define update sources on github
 gitowner="vchrizz"
 gitrepo="ER-wizard-OLSRd_V1"
-gitbranch="prepare-097"
+gitbranch="master"
 
 #
 # DO NOT EDIT BELOW HERE !
