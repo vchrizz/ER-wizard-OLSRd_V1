@@ -33,7 +33,7 @@ olsrdsetupscriptfile="/config/scripts/post-config.d/olsrd_setup.sh"
 #define update sources on github
 gitowner="vchrizz"
 gitrepo="ER-wizard-OLSRd_V1"
-gitbranch="prepare-097"
+gitbranch="master"
 
 #
 # DO NOT EDIT BELOW HERE !
