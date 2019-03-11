@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962r68/20190309]
+# Version [0962r68/20190311]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -23149,30 +23149,70 @@ apply () {
         fi
     done
 
-    # TODO 20180629 
-    #-> disablePlugin ok
-    #enablePlugin: replace full block: filename, managedPlParams, ignore unmanagedPlParams
     #plugins
+    #TXTINFO
     olsrd4plgtxtinfo=$(jq -M -r '.olsrd4plgtxtinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgtxtinfo" == "on" ]]; then
+        #if disabled, enable
         if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^#//' $olsrd4conf
+            #remove "#" from front
+            sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^#//' $olsrd4conf
         fi
+        #check for port
+        jqport=$(jq -M -r '.txtplg4port' $INPUT)
+        #change/uncomment existing line
+        (sed -n '/^[ \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "Port" "'$jqport'"/I' $olsrd4conf
+        #add line if missing
+        (sed -n '/^[# \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"Port"') || sed -i '/LoadPlugin\ \"olsrd_txtinfo/,/}/ {s/{/{\n  PlParam "Port" "'$jqport'"/ }' $olsrd4conf
+        #check PlParams for host
+        case "$(jq -r '.txtplg4who' $INPUT)" in
+          "any")       accept="0.0.0.0";;
+          *)           accept="127.0.0.1";;
+        esac
+        #change/uncomment existing line
+        (sed -n '/^[ \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*accept.*$accept") || sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^.*plparam.*accept.*$/  PlParam "accept" "'$accept'"/I' $olsrd4conf
+        #add line if missing
+        (sed -n '/^[# \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"accept"') || sed -i '/LoadPlugin\ \"olsrd_txtinfo/,/}/ {s/{/{\n  PlParam "accept" "'$accept'"/ }' $olsrd4conf
     else
+        #if enabled, disable it
         if [[ $(grep LoadPlugin.*olsrd_txtinfo $olsrd4conf) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_txt/,/}/"'s/^/#/' $olsrd4conf
+            #disable plugin by adding "#" in front of line
+            sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
+    
+    #JSONINFO
     olsrd4plgjsoninfo=$(jq -M -r '.olsrd4plgjsoninfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plgjsoninfo" == "on" ]]; then
+        #if disabled, enable
         if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) == \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^#//' $olsrd4conf
+            #remove "#" from front
+            sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^#//' $olsrd4conf
         fi
+        #check for port
+        jqport=$(jq -M -r '.jsonplg4port' $INPUT)
+        #change/uncomment existing line
+        (sed -n '/^[ \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "Port" "'$jqport'"/I' $olsrd4conf
+        #add line if missing
+        (sed -n '/^[# \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"Port"') || sed -i '/LoadPlugin\ \"olsrd_jsoninfo/,/}/ {s/{/{\n  PlParam "Port" "'$jqport'"/ }' $olsrd4conf
+        #check PlParams for host
+        case "$(jq -r '.jsonplg4who' $INPUT)" in
+          "any")       accept="0.0.0.0";;
+          *)           accept="127.0.0.1";;
+        esac
+        #change/uncomment existing line
+        (sed -n '/^[ \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*accept.*$accept") || sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^.*plparam.*accept.*$/  PlParam "accept" "'$accept'"/I' $olsrd4conf
+        #add line if missing
+        (sed -n '/^[# \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"accept"') || sed -i '/LoadPlugin\ \"olsrd_jsoninfo/,/}/ {s/{/{\n  PlParam "accept" "'$accept'"/ }' $olsrd4conf
     else
+        #if enabled, disable it
         if [[ $(grep LoadPlugin.*olsrd_jsoninfo $olsrd4conf) != \#* ]]; then
-            sed -i "/LoadPlugin\ \"olsrd_json/,/}/"'s/^/#/' $olsrd4conf
+            #disable plugin by adding "#" in front of line
+            sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^/#/' $olsrd4conf
         fi
     fi
+
+    #HTTPINFO
     olsrd4plghttpinfo=$(jq -M -r '.olsrd4plghttpinfo' $INPUT 2>/dev/null)
     if [[ "$olsrd4plghttpinfo" == "on" ]]; then
         #if disabled, enable
@@ -23225,9 +23265,7 @@ apply () {
         fi
     fi
 
-
-
-
+    #WATCHDOG
     olsrd4watchdog=$(jq -M -r '.olsrd4watchdog' $INPUT 2>/dev/null)
     if [[ "$olsrd4watchdog" == "on" ]]; then
         if [ $(grep -c LoadPlugin.*olsrd_watchdog $olsrd4conf) -eq 0 ]; then
