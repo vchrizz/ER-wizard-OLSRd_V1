@@ -23161,12 +23161,13 @@ apply () {
         #check for port
         jqport=$(jq -M -r '.txtplg4port' $INPUT)
         #change/uncomment existing line
-        (sed -n '/^[ \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "Port" "'$jqport'"/I' $olsrd4conf
+        (sed -n '/^[ \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_txtinfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "port" "'$jqport'"/I' $olsrd4conf
         #add line if missing
-        (sed -n '/^[# \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"Port"') || sed -i '/LoadPlugin\ \"olsrd_txtinfo/,/}/ {s/{/{\n  PlParam "Port" "'$jqport'"/ }' $olsrd4conf
+        (sed -n '/^[# \t]*loadplugin.*olsrd_txtinfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"port"') || sed -i '/LoadPlugin\ \"olsrd_txtinfo/,/}/ {s/{/{\n  PlParam "port" "'$jqport'"/ }' $olsrd4conf
         #check PlParams for host
         case "$(jq -r '.txtplg4who' $INPUT)" in
           "any")       accept="0.0.0.0";;
+          "custom")    accept=$(jq -M -r '.txtplg4custom' $INPUT);;
           *)           accept="127.0.0.1";;
         esac
         #change/uncomment existing line
@@ -23192,12 +23193,13 @@ apply () {
         #check for port
         jqport=$(jq -M -r '.jsonplg4port' $INPUT)
         #change/uncomment existing line
-        (sed -n '/^[ \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "Port" "'$jqport'"/I' $olsrd4conf
+        (sed -n '/^[ \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -iqE "plparam.*port.*$jqport") || sed -i "/LoadPlugin\ \"olsrd_jsoninfo/,/}/"'s/^.*plparam.*port.*$/  PlParam "port" "'$jqport'"/I' $olsrd4conf
         #add line if missing
-        (sed -n '/^[# \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"Port"') || sed -i '/LoadPlugin\ \"olsrd_jsoninfo/,/}/ {s/{/{\n  PlParam "Port" "'$jqport'"/ }' $olsrd4conf
+        (sed -n '/^[# \t]*loadplugin.*olsrd_jsoninfo/I,/}/p' $olsrd4conf | grep -qE 'PlParam.*"port"') || sed -i '/LoadPlugin\ \"olsrd_jsoninfo/,/}/ {s/{/{\n  PlParam "port" "'$jqport'"/ }' $olsrd4conf
         #check PlParams for host
         case "$(jq -r '.jsonplg4who' $INPUT)" in
           "any")       accept="0.0.0.0";;
+          "custom")    accept=$(jq -M -r '.jsonplg4custom' $INPUT);;
           *)           accept="127.0.0.1";;
         esac
         #change/uncomment existing line
