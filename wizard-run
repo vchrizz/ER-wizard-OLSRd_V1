@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962r68/20190311]
+# Version [0962r68/20190331]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -22434,7 +22434,7 @@ setupv4olsrd () {
         sed -i '/DAEMON_OPTS/s/-i $MESH_IF //g' $olsrd4default
         sed -i '/DAEMON_OPTS/s/-i $MESH_IF //g' $olsrd4def
         #
-        #plugins and pluginparameters: take
+        #plugins and pluginparameters
         plugins=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | grep -iw loadplugin | awk '{print $2}' | cut -d '.' -f1 | tr -d '"')
         if [ "$plugins" ]; then
           for plugin in $plugins; do
@@ -22447,6 +22447,7 @@ setupv4olsrd () {
             sed -n '/^[ \t]*loadplugin[ \"\t]*'$plugin'/I,/}/ p' $conffile 2>>$log | sed -e 's/loadplugin[ \t"a-zA-Z0-9._]*//Ig' -e '/^$/d' -e 's/.*{/\nLoadPlugin "'$file'"\n{/' >>$olsrd4conf 2>>$log
           done
         fi
+        #enable httpinfo for local ranges if disabled before migration?
     fi
     #migration is done
     #loop all plugins (even disabled ones) to put the correct filename of library
@@ -23294,6 +23295,7 @@ apply () {
         file="$1"
         key="$2"
         value="$3"
+        [ "$value" == "null" ] && return
         if [ "$value" ]; then
             current=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $file | grep -i $key | awk '{print $2}')
             if [ "$current" == "$value" ]; then
