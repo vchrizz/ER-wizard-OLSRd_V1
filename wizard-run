@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962r68/20190624]
+# Version [0962r68/20191129]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -129,30 +129,31 @@ write_ntp_script () {
 # this script will restart olsrd after ntp in order to make olsrd-httpinfo-plugin report "uptime" correctly
 
 LOG=/tmp/olsr-after-ntp.log
-if [ $(date +%s) -lt 1529900000 ] &&
-   [ -f /etc/init.d/olsrd ] &&
-   [ $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /etc/default/olsrd 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES") -eq 1 ]
-then
-    (echo $(date)" - Checking sync of ntp..." >>$LOG
-    p="ping -nq -c1 -w1 8.8.8.8"; c=1
-    until $p >/dev/null 2>&1; do
-      echo $(date)" - Waiting for network ($c)..." >>$LOG
-      c=$(($c+1))
-      sleep 3
-      [ $c -gt 300 ] && echo $(date)"Giving up..." >>$LOG && break
-    done
-    if [ $c -le 300 ]; then
-        /etc/init.d/ntp stop >>$LOG 2>&1
-        /usr/sbin/ntpdate-debian time.nist.gov >>$LOG 2>&1
-        echo $(date)" - new date is set..." >>$LOG
-        /etc/init.d/ntp start >>$LOG 2>&1
-        [ $(pgrep -x olsrd) ] && sudo /etc/init.d/olsrd restart >>$LOG 2>&1
-    fi
-    echo $(date)" - exit $0..." >>$LOG ) &
-    echo $(date)" - preperation done" >>$LOG
-else
-    echo $(date)" - startup-date seems fine or olsrd not configured to start." >>$LOG
+
+[ $(date +%s) -ge $(( $(stat /root.dev/version -c %Y) + 86400 )) ] && echo $(date)" - current date is younger than EdgeOS build, most likely ok" >>$LOG && exit 0
+[ $(date +%s) -ge 1575026835 ] && echo $(date)" - current date younger than 2019-11-29, most likely ok" >>$LOG && exit 0
+[ ! -f /etc/init.d/olsrd ] && echo $(date)" - olsrd init.d not found" >>$LOG && exit 0
+[ ! -f /etc/default/olsrd ] && echo $(date)" - olsrd default found" >>$LOG && exit 0
+[ $(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' /etc/default/olsrd 2>/dev/null | grep -icE "START_OLSRD[ \t]*=[ \"\t]*YES") -ne 1 ] && echo $(date)" - olsrd autostart not enabled" >>$LOG && exit 0
+
+(echo $(date)" - Checking sync of ntp..." >>$LOG
+p="ping -nq -c1 -w1 8.8.8.8"; c=1
+until $p >/dev/null 2>&1; do
+  echo $(date)" - Waiting for network ($c)..." >>$LOG
+  c=$(($c+1))
+  sleep 3
+  [ $c -gt 300 ] && echo $(date)"Giving up..." >>$LOG && break
+done
+if [ $c -le 300 ]; then
+    /etc/init.d/ntp stop >>$LOG 2>&1
+    /usr/sbin/ntpdate-debian time.nist.gov >>$LOG 2>&1
+    echo $(date)" - new date is set..." >>$LOG
+    /etc/init.d/ntp start >>$LOG 2>&1
+    
+    [ $(pgrep -x olsrd) ] && sudo /etc/init.d/olsrd restart >>$LOG 2>&1
 fi
+echo $(date)" - exit $0..." >>$LOG ) &
+echo $(date)" - preperation done" >>$LOG
 exit 0
 ENDSCRIPTCONTENT
     chmod 755 /config/scripts/post-config.d/olsr-after-ntp.sh
