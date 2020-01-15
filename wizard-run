@@ -112,8 +112,8 @@ sed -n "/^load ()/,/^}/p" $olsrdv1wizard >>func.sh
 source func.sh
 load >>$log 2>>$log
 rm -f func.sh 
-$olsrd4init restart >>$log 2>>$log
-$olsrd6init restart >>$log 2>>$log
+[ $(pgrep -x olsrd) ]  || $olsrd4init start >>$log 2>>$log
+[ $(pgrep -x olsrd6) ] || $olsrd6init start >>$log 2>>$log
 echo "Finished olsrdsetupscriptfile script... $(date +%Y-%m-%d/%H:%M:%S.%N)" >>$log
 exit 0
 ENDSCRIPTCONTENT
