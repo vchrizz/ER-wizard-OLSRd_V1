@@ -22691,7 +22691,7 @@ load () {
             [[ "$mintf" == "${v4ifinterface}" ]] && intfstatus='"enabled":"on",' && break
         done
         #settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface .*'$v4ifinterface'.*$/I,/}/p')
-        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface.*[" \t]+'$v4ifinterface'[" \t{].*$/I,/}/p')
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface.*[" \t]\+'$v4ifinterface'[" \t{]\+.*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
@@ -22851,7 +22851,7 @@ load () {
             [[ "$mintf" == "${v6ifinterface}" ]] && intfstatus='"enabled":"on",' && break
         done
         #settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface .*'$v6ifinterface'.*$/I,/}/p')
-        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface.*[" \t]+'$v6ifinterface'[" \t{].*$/I,/}/p')
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface.*[" \t]\+'$v6ifinterface'[" \t{]\+.*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
