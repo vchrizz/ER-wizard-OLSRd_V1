@@ -23077,7 +23077,7 @@ apply () {
             else
                 new3=""
             fi
-            if (echo "$olsrd4meshif" | grep -iwq $int); then
+            if (echo "$olsrd4meshif" | grep -iwqE "^$int\$"); then
                 echo "Interface $int is already enabled, check params" >>$log
                 sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/'"cInterface \"$int\" {\n$new1$new2$new3}" $olsrd4conf >>$log 2>>$log
             else
@@ -23386,7 +23386,7 @@ apply () {
             else
                 new3=""
             fi
-            if (echo "$olsrd6meshif" | grep -iwq $int); then
+            if (echo "$olsrd6meshif" | grep -iwqE "^$int\$"); then
                 echo "Interface $int is already enabled, check params" >>$log
                 sed -i '/^[# \t]*interface[ \t]\+"'$int'"/I,/}/'"cInterface \"$int\" {\n$new1$new2$new3}" $olsrd6conf >>$log 2>>$log
             else
