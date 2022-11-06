@@ -2,7 +2,7 @@
 
 #
 # EdgeMAX Wizard "OLSRd_V1" created 03/2016 by Onetrix.net for FunkFeuer.at
-# Version [0962r68/20191129]
+# Version [0962r68/20221004]
 # ^-- previous line is used from bmk-webstatus-package as version identification, dont remove "Version "
 #
 # Github repository: https://github.com/vchrizz/ER-wizard-OLSRd_V1/
@@ -22408,7 +22408,7 @@ setupv4olsrd () {
           int=$(echo $int | tr -d '"' | tr '[:upper:]' '[:lower:]')
           [[ "$int" =~ 'nterface' ]] && continue
           [[ "$int" =~ '{' ]] && continue
-          settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
+          settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface.*'$int'.*$/I,/}/p')
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
           autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
@@ -22690,7 +22690,8 @@ load () {
         for mintf in $olsrd4meshif; do
             [[ "$mintf" == "${v4ifinterface}" ]] && intfstatus='"enabled":"on",' && break
         done
-        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface .*'$v4ifinterface'.*$/I,/}/p')
+        #settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface .*'$v4ifinterface'.*$/I,/}/p')
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd4conf | sed -n '/^[ \t]*interface.*[" \t]+'$v4ifinterface'[" \t{].*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
@@ -22849,7 +22850,8 @@ load () {
         for mintf in $olsrd6meshif; do
             [[ "$mintf" == "${v6ifinterface}" ]] && intfstatus='"enabled":"on",' && break
         done
-        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface .*'$v6ifinterface'.*$/I,/}/p')
+        #settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface .*'$v6ifinterface'.*$/I,/}/p')
+        settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $olsrd6conf | sed -n '/^[ \t]*interface.*[" \t]+'$v6ifinterface'[" \t{].*$/I,/}/p')
         mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
         autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
         defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
