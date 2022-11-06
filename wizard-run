@@ -22408,7 +22408,7 @@ setupv4olsrd () {
           int=$(echo $int | tr -d '"' | tr '[:upper:]' '[:lower:]')
           [[ "$int" =~ 'nterface' ]] && continue
           [[ "$int" =~ '{' ]] && continue
-          settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface.*'$int'.*$/I,/}/p')
+          settings=$(sed -e 's/[ \t]*#.*$//' -e '/^[ ]*$/d' $conffile | sed -n '/^[ \t]*interface .*'$int'.*$/I,/}/p')
           mode=$(echo "$settings" | grep -i mode | awk '{print $2}' | tr -d '"')
           autodetectchanges=$(echo "$settings" | grep -i AutoDetectChanges | awk '{print $2}' | tr -d '"')
           defaultLQ=$(echo "$settings" | grep -iE "LinkQualityMult .*default" | awk '{print $3}' | tr -d '"')
